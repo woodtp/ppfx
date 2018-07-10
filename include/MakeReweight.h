@@ -39,6 +39,8 @@ namespace NeutrinoFluxReweight{
     void SetOptions(std::string fileIn);    
     static MakeReweight* getInstance();
     static void resetInstance();
+
+    
     
     /*! calculate the weights for this event using the old flux ntuple format
      * (filled in nu_g4numi object),  the tgtcfg (the target configuration, example: le010z) 
@@ -67,6 +69,8 @@ namespace NeutrinoFluxReweight{
     //! Reweighter Drivers for the central value
     ReweightDriver* cv_rw;
 
+    bool AlreadyInitialized() {return init;};
+
   private:    
     /*!
      * Inititalize the job and configurethe ReweighterDrivier
@@ -84,6 +88,8 @@ namespace NeutrinoFluxReweight{
     std::vector<double> vec_wgts;
     std::map<std::string,std::vector<double> > map_rew_wgts;
     double cv_wgt;
+    
+    bool init = false;
 
     static MakeReweight* instance;
     
