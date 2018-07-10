@@ -37,7 +37,7 @@ double FillIMapHists(TChain* tdk2nu, TChain* tdkmeta, HistList* hists, const Fil
 
   const char* ppfxDir = getenv("PPFX_DIR");
   MakeReweight* makerew = MakeReweight::getInstance();
-  makerew->SetOptions(Form("%s/scripts/inputs_imap.xml",ppfxDir));
+  makerew->SetOptions(Form("%s/xml/inputs_imap.xml",ppfxDir));
 
   FillIMapHistsReweighters reweighters;
   reweighters.NumiPions               = (makerew->cv_rw)->MIPP_NUMI_PION_Universe;
