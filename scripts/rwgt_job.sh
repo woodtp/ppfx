@@ -47,7 +47,7 @@ echo ls -l $_CONDOR_SCRATCH_DIR/inputs
 
 for f in `ls $_CONDOR_SCRATCH_DIR/inputs/*.root`; do
     FOUT="out_"`basename $f`
-    $PPFX_DIR/bin/doReweight_dk2nu $f $FOUT $PPFX_DIR/scripts/inputs_default.xml 
+    $PPFX_DIR/bin/doReweight_dk2nu $f $FOUT $PPFX_DIR/xml/inputs_default.xml 
 done
 
 echo "ls -lh on working directory:"
