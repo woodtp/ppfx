@@ -36,7 +36,7 @@ namespace NeutrinoFluxReweight{
     const char* ppfxDir = getenv("PPFX_DIR");
        
     std::cout<<"Initializing correlation parameters"<<std::endl;
-    cvu->readFromXML(Form("%s/xml/Parameters_%s.xml",ppfxDir,mippCorrOption.c_str()));
+    cvu->readFromXML(Form("%s/uncertainties/Parameters_%s.xml",ppfxDir,mippCorrOption.c_str()));
     
     std::cout<<"Initializing bin data conventions"<<std::endl;
     myb->pip_data_from_xml(Form("%s/data/BINS/MIPPNumiData_PIP_Bins.xml",ppfxDir));
