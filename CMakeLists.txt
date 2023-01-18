@@ -17,7 +17,7 @@
 # use cmake 2.8 or later
 cmake_minimum_required (VERSION 3.3)
 
-project(ppfx)
+project(ppfx VERSION 02.11.05)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
