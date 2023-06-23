@@ -34,10 +34,11 @@ namespace NeutrinoFluxReweight{
     Gammacm = -1000.;
     
     Vol = "NoDefinied";
+    nucleus = -1;
     
   }
   
-  InteractionData::InteractionData(int genid, double incMom[], int incPdg, double prodMom[], int prodPdg, std::string volname, std::string procname, double vtx[]){
+  InteractionData::InteractionData(int genid, double incMom[], int incPdg, double prodMom[], int prodPdg, std::string volname, int nucleus_pdg, std::string procname, double vtx[]){
 
     particle = TDatabasePDG::Instance();
     // Z direction along the direction of the incident particle
@@ -75,7 +76,8 @@ namespace NeutrinoFluxReweight{
      * Center of mass of the system of projectile
      * and nucleon (not the nucleus!)
      */
-    static const double NUCLEON_MASS = 
+
+    static const double NUCLEON_MASS =
       (particle->GetParticle("proton")->Mass()
       + particle->GetParticle("neutron")->Mass())/2;
     static const double NUCLEON_MASS2 = NUCLEON_MASS * NUCLEON_MASS;
@@ -98,6 +100,15 @@ namespace NeutrinoFluxReweight{
     
     //Volume:
     InteractionData::Vol = volname;
+
+    //target nucleus z
+    if(!(nucleus_pdg / 1000000000)) {
+//       std::cout<<"Error! "<<nucleus_pdg<<" is not a nucleus code! Vol = "<<volname<<", Proc = "<<procname<<std::endl;
+      InteractionData::nucleus = -1;
+    }
+    else {
+      InteractionData::nucleus = (nucleus_pdg / 10000) % 1000;
+    }
 
     //Process:
     InteractionData::Proc = procname;
