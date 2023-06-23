@@ -76,6 +76,7 @@ namespace NeutrinoFluxReweight{
      * Center of mass of the system of projectile
      * and nucleon (not the nucleus!)
      */
+
     static const double NUCLEON_MASS =
       (particle->GetParticle("proton")->Mass()
       + particle->GetParticle("neutron")->Mass())/2;
