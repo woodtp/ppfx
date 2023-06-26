@@ -70,11 +70,19 @@ namespace NeutrinoFluxReweight{
     InteractionData::Inc_Mass  = particle->GetParticle(Inc_pdg)->Mass();
     InteractionData::Prod_Mass = particle->GetParticle(Prod_pdg)->Mass();
 
-
+    static const double NUCLEON_MASS = (particle->GetParticle(2112)->Mass() + particle->GetParticle(2212)->Mass())/2.;
+    static const double NUCLEON_MASS2 = NUCLEON_MASS*NUCLEON_MASS;
+    
     //Ecm, gamma:
     double inc_E_lab = std::sqrt(Inc_P*Inc_P + pow(Inc_Mass,2));
-    InteractionData::Ecm       = std::sqrt(2.*pow(Inc_Mass,2)+2.*inc_E_lab*Inc_Mass); 
-    InteractionData::Betacm    = std::sqrt(pow(inc_E_lab,2)-pow(Inc_Mass,2.0))/(inc_E_lab + Inc_Mass); 
+    
+    // // xF calculation bug -- assumes incident particle mass is same as target nucleon mass
+    // InteractionData::Ecm       = std::sqrt(2.*pow(Inc_Mass,2)+2.*inc_E_lab*Inc_Mass);
+    // InteractionData::Betacm    = std::sqrt(pow(inc_E_lab,2)-pow(Inc_Mass,2.0))/(inc_E_lab + Inc_Mass);
+    
+    // xF Bug fix
+    InteractionData::Ecm = std::sqrt(pow(Inc_Mass, 2) + NUCLEON_MASS2 + 2.*inc_E_lab*NUCLEON_MASS);
+    InteractionData::Betacm = std::sqrt(pow(inc_E_lab, 2)- pow(Inc_Mass, 2.0))/(inc_E_lab + NUCLEON_MASS);
     InteractionData::Gammacm   = 1./std::sqrt(1.-pow(Betacm,2.0));
     
     //xF:
