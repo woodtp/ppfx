@@ -22,8 +22,6 @@ int main( int argc, char *argv[])
   std::vector<std::string> par;
   par.push_back("CreateHists.cpp");
   par.push_back("/uboone/data/users/bnayak/ppfx/ppfx_interactive/rootfiles/microboone/nue_RHC_ancestry.root");
-  // par.push_back("/pnfs/uboone/persistent/uboonebeam/numi_dk2nu_zero_threshold/FHC/g4numiv6_minervame_me000z200i_1[0-2][0-9]_0000.root");
-  // par.push_back("/pnfs/uboone/persistent/uboonebeam/numi_dk2nu_zero_threshold/RHC/g4numiv6_minervame_me000z-200i_50[0-2]_0000.root");
   par.push_back("/pnfs/uboone/persistent/users/bnayak/flux_files/nova/me000z-200i/g4numiv6_minervame_me000z-200i_1[0-9][0-9]_0006.root");
   par.push_back("0.2");
   par.push_back("5");
@@ -50,7 +48,6 @@ int main( int argc, char *argv[])
   std::cout<<"TT cut  : "<<NA49cuts<<std::endl;
   std::cout<<"MIPP cut: "<<MIPPcuts<<std::endl;
 
-    //int CreateHists(const char* output_filename, const char* filename, int elow, int ehigh, int nu_id=56, bool NA49cuts=false, bool MIPPcuts=false))
   return CreateHists(par[1].c_str(), par[2].c_str(), min, max, nu_id, NA49cuts, MIPPcuts);
 }
 
@@ -134,12 +131,6 @@ int CreateHists(const char* output_filename, const char* filename, float elow, f
 //name_hists
 //scale_hists
 //write_hists
-
-
-
-
-
-
 
 // ----------------------------------------------
 // Make directories in the output root file

@@ -57,7 +57,6 @@ double FillIMapHists(TChain* tdk2nu, TChain* tdkmeta, HistList* hists, const Fil
     tdkmeta->GetEntry(ientry);
 
     total_weight+=FillOneEntry(dk2nu,dkmeta,hists,opts,&reweighters);
-    // std::cout<<"tot wgt: "<<total_weight<<" "<<dk2nu->decay.ntype<<std::endl;
   }
   //Releasing memory:
   makerew->resetInstance();
@@ -102,6 +101,7 @@ double FillOneEntry(bsim::Dk2Nu* dk2nu, bsim::DkMeta* dkmeta, HistList* hists, c
   */
   NeutrinoFluxReweight::InteractionChainData icd(dk2nu,dkmeta);
   const int ninter=icd.interaction_chain.size();
+  // turn on for MIPPNuMIOn option
   // std::vector<bool> numi_pion_nodes=reweighters->NumiPions->canReweight(icd);
   // std::vector<bool> numi_kaon_nodes=reweighters->NumiKaons->canReweight(icd);
 
@@ -132,7 +132,6 @@ double FillOneEntry(bsim::Dk2Nu* dk2nu, bsim::DkMeta* dkmeta, HistList* hists, c
     ggp_name = "Empty";
   }
   for(int iinter=0; iinter<ninter; iinter++){
-
 
     const NeutrinoFluxReweight::InteractionData& interdata
       =icd.interaction_chain[iinter];
