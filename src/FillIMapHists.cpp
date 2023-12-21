@@ -298,14 +298,19 @@ double FillOneEntry(bsim::Dk2Nu* dk2nu, bsim::DkMeta* dkmeta, HistList* hists, c
   hists->_hchainsize->Fill(ninter, weight);
   hists->_hparentsgp->Fill(gp_name.c_str(), p_name.c_str(), weight);
   hists->_hgrandparentsggp->Fill(ggp_name.c_str(), gp_name.c_str(), weight);
+  hists->_henuxf_allparents->Fill(enu, p_xf, weight);
+  hists->_henuxf_allgrandparents->Fill(enu, gp_xf, weight);
   int p_idx=FindIndexFromParticleName(p_name);
   if(p_idx != -1){
     hists->_hxfpt_parents[p_idx]->Fill(p_xf, p_pt, weight);
+    hists->_henuxf_parents[p_idx]->Fill(enu, p_xf, weight);
     hists->_hchainsize_parents[p_idx]->Fill(ninter, weight);
   }
   int gp_idx=FindIndexFromParticleName(gp_name);
-  if(gp_idx != -1)
+  if(gp_idx != -1){
     hists->_hxfpt_grandparents[gp_idx]->Fill(gp_xf, gp_pt, weight);
+    hists->_henuxf_grandparents[gp_idx]->Fill(enu, gp_xf, weight);
+  }
   // the end
   return weight;
 }

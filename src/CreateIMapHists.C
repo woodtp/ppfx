@@ -21,11 +21,11 @@ int main( int argc, char *argv[])
   //! Default parameters
   std::vector<std::string> par;
   par.push_back("CreateHists.cpp");
-  par.push_back("/uboone/data/users/bnayak/ppfx/ppfx_interactive/rootfiles/microboone/nue_RHC_ancestry.root");
-  par.push_back("/pnfs/uboone/persistent/users/bnayak/flux_files/nova/me000z-200i/g4numiv6_minervame_me000z-200i_1[0-9][0-9]_0006.root");
+  par.push_back("/uboone/data/users/bnayak/ppfx/ppfx_interactive/rootfiles/microboone/numu_RHC_ancestry.root");
+  par.push_back("/pnfs/uboone/persistent/users/bnayak/flux_files/nova/me000z-200i/g4numiv6_minervame_me000z-200i_10[0-2]_0006.root");
   par.push_back("0.2");
   par.push_back("5");
-  par.push_back("12");
+  par.push_back("14");
   par.push_back("0");//NA49
   par.push_back("0");//MIPP
 
@@ -76,10 +76,13 @@ int CreateHists(const char* output_filename, const char* filename, float elow, f
 	vector<TH2D *> hxfpt_parents(IMap::npop);
 	vector<TH1D *> hchainsize_parents(IMap::npop);
 	vector<TH2D *> hxfpt_grandparents(IMap::npop);
+	vector<TH2D *> henuxf_parents(IMap::npop);
+	vector<TH2D *> henuxf_grandparents(IMap::npop);
 
 
 	//collect histos in a list
 	HistList hists = {hxfpt_parents, hchainsize_parents, hxfpt_grandparents,
+				henuxf_parents, henuxf_grandparents,
 				hmat, hvol, hmatbkw, hxfpt_tot, henergytotal,
 			  hkepop_tot, htmpop_tot, hxfpt, henergymaterial,
 			  henergyvolume, hkepop, htmpop, h_in_vs_mat};
@@ -305,20 +308,26 @@ void name_hists(HistList * hists, TFile * out_file){
 		hists->_hparentsgp = new TH2D("h_parent_vs_grandparent",";grandparent ; parent particle",50,0,50,50,0,50);
 		hists->_hgrandparentsggp = new TH2D("h_grandparent_vs_ggrandparent",";great grandparent ; grandparent particle",50,0,50,50,0,50);
 		hists->_hchainsize = new TH1D("h_chainsize", "", 10, 0.5, 10.5);
+    hists->_henuxf_allparents = new TH2D("henuxf_allparents",";neutrino energy (GeV); parent xF",50,0,5,100,-1,1);
 		for(int j=0;j<IMap::npop;j++)
 		{
 				sprintf(namefile,"hxfpt%s", popparticle[j].c_str());
 				hists->_hxfpt_parents[j] = new TH2D(namefile, ";xF; pT (GeV/c)", 500,-1,1,100,0,2);
 				sprintf(namefile,"hchainsize%s", popparticle[j].c_str());
 				hists->_hchainsize_parents[j] = new TH1D(namefile, "", 10, 0.5, 10.5);
+				sprintf(namefile,"henuxf%s", popparticle[j].c_str());
+				hists->_henuxf_parents[j] = new TH2D(namefile, ";neutrino energy (GeV); parent xF", 50,0,5,100,-1,1);
 
 		}
 		out_file->cd("Grandparents");
 		hists->_hgrandparentsmat = new TH2D("h_grandparent_vs_mat",";material ; grandparent particle",50,0,50,50,0,50);
+    hists->_henuxf_allgrandparents = new TH2D("henuxf_allgrandparents",";neutrino energy (GeV); grandparent xF",50,0,5,100,-1,1);
 		for(int j=0;j<IMap::npop;j++)
 		{
 				sprintf(namefile,"hxfpt%s", popparticle[j].c_str());
 				hists->_hxfpt_grandparents[j] = new TH2D(namefile, ";xF; pT (GeV/c)", 500,-1,1,100,0,2);
+				sprintf(namefile,"henuxf%s", popparticle[j].c_str());
+				hists->_henuxf_grandparents[j] = new TH2D(namefile, ";neutrino energy (GeV); grandparent xF", 50,0,5,100,-1,1);
 
 		}
 }
@@ -387,10 +396,14 @@ void scale_hists(HistList * hists, double total_weight){
 		hists->_hchainsize->Scale(1./total_weight);
 	  hists->_hparentsgp->Scale(1./total_weight);
 	  hists->_hgrandparentsggp->Scale(1./total_weight);
+		hists->_henuxf_allparents->Scale(1./total_weight);
+		hists->_henuxf_allgrandparents->Scale(1./total_weight);
 	  for(int j=0;j<IMap::npop;j++){
 			hists->_hxfpt_parents[j]->Scale(1./total_weight);
 			hists->_hchainsize_parents[j]->Scale(1./total_weight);
 			hists->_hxfpt_grandparents[j]->Scale(1./total_weight);
+			hists->_henuxf_parents[j]->Scale(1./total_weight);
+			hists->_henuxf_grandparents[j]->Scale(1./total_weight);
 		}
 
 }
@@ -469,14 +482,19 @@ void write_hists(HistList * hists, TFile * out_file){
 	hists->_hparentsmat->Write();
 	hists->_hchainsize->Write();
 	hists->_hparentsgp->Write();
+	hists->_henuxf_allparents->Write();
 	for(int j=0; j<IMap::npop; j++){
 		hists->_hxfpt_parents[j]->Write();
 		hists->_hchainsize_parents[j]->Write();
+		hists->_henuxf_parents[j]->Write();
 	}
 
 	out_file->cd("Grandparents");
 	hists->_hgrandparentsmat->Write();
 	hists->_hgrandparentsggp->Write();
-	for(int j=0; j<IMap::npop; j++)
+	hists->_henuxf_allgrandparents->Write();
+	for(int j=0; j<IMap::npop; j++){
 		hists->_hxfpt_grandparents[j]->Write();
+		hists->_henuxf_grandparents[j]->Write();
+	}
 }

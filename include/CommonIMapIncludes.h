@@ -32,6 +32,8 @@ struct HistList{
 	vector<TH2D *> _hxfpt_parents;
 	vector<TH1D *> _hchainsize_parents;
 	vector<TH2D *> _hxfpt_grandparents;
+	vector<TH2D *> _henuxf_parents;
+	vector<TH2D *> _henuxf_grandparents;
 
   vector<TH2D *> _hmat;	
   vector<TH2D *> _hvol;
@@ -73,6 +75,8 @@ struct HistList{
 	TH1D* _hchainsize;
 	TH2D* _hparentsgp;
 	TH2D* _hgrandparentsggp;
+  TH2D* _henuxf_allparents;
+  TH2D* _henuxf_allgrandparents;
 
 };
 
