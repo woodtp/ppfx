@@ -21,7 +21,7 @@ int main( int argc, char *argv[])
   //! Default parameters
   std::vector<std::string> par;
   par.push_back("CreateHists.cpp");
-  par.push_back("/uboone/data/users/bnayak/ppfx/ppfx_interactive/rootfiles/microboone/numu_RHC_ancestry.root");
+  par.push_back("/uboone/data/users/bnayak/ppfx/ppfx_interactive/rootfiles/microboone/numu_RHC_tests.root");
   par.push_back("/pnfs/uboone/persistent/users/bnayak/flux_files/nova/me000z-200i/g4numiv6_minervame_me000z-200i_10[0-2]_0006.root");
   par.push_back("0.2");
   par.push_back("5");
