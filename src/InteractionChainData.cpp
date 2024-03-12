@@ -171,7 +171,7 @@ namespace NeutrinoFluxReweight{
       std::string this_vol=nu->ancestor[itraj_prod].ivol;
       
       //Get Rid of Hydrogen
-        if(pdg_prod == 1000010020 || pdg_inc == 1000010030){
+        if(pdg_prod == 1000010020 || pdg_inc == 1000010020|| pdg_prod == 1000010030 || pdg_inc == 1000010030 || pdg_inc == 1000020030||pdg_prod==1000020030){
       // std::cout<<"InteractionChainData::Unusual pdgcode found "<<pdg_prod<<std::endl; //For now just skipping these deuterons
 	continue;
 	}
