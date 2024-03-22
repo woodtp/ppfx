@@ -170,7 +170,7 @@ double ThinTargetMC::getMCxs_pC_piK(int genid, double inc_mom){
     double frac_hi  = yy[idx_hip];
     double frac_m   =  frac_low + (inc_mom-double(xx[idx_lowp]))*(frac_hi-frac_low)/(double(xx[idx_hip])-double(xx[idx_lowp]));
     
-    if(genid==0)return frac_m*243.2435;
+    if(genid==0)return frac_m*220.28099;
     else if(genid>0)return frac_m;
     else{
       std::cout<<"Something is wrong with gen "<<std::endl;
@@ -198,10 +198,10 @@ double ThinTargetMC::getMCxs_pC_nucleon(int genid, int pdg, double inc_mom){
     double frac_hi  = yy[idx_hip];
     double frac_m   =  frac_low + (inc_mom-double(xx[idx_lowp]))*(frac_hi-frac_low)/(double(xx[idx_hip])-double(xx[idx_lowp]));
     
-    if(genid==0 && pdg==2212)return frac_m*243.2435;
+    if(genid==0 && pdg==2212)return frac_m*220.28099;
     if(genid>0  && pdg==2212)return frac_m;
     if(genid==0 && pdg==2112)return frac_m;
-    if(genid>0  && pdg==2112)return frac_m/243.2435;
+    if(genid>0  && pdg==2112)return frac_m/220.28099;
     return 1.0;
 
   }
