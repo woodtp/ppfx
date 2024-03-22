@@ -27,6 +27,20 @@ namespace NeutrinoFluxReweight{
     mom_inc.push_back(70);mom_inc.push_back(80);
     mom_inc.push_back(90);mom_inc.push_back(100);
     mom_inc.push_back(110);mom_inc.push_back(120);
+    
+    TFile* ftot = new TFile(Form("%s/MC/FTFP/tot_prod_FTFP_BERT.root", dirData), "read");
+    int incE = 0;
+    for(int i = 0; i < 13; i++){
+      if(i < 12) incE = mom_inc[i];
+      else incE = 158;
+      TH1D* htot = (TH1D*)ftot->Get(Form("tot_prod_xs_%dGeV", incE));
+      xx[i] = incE;
+      yy[i] = htot->Integral();
+    }
+    for(int i = 0; i < 13; i++){
+      yy[i] = yy[i]/yy[12];
+    }
+    ftot->Close();
 
     int part_size = spart_prod.size();
     int mom_size  = mom_inc.size();
@@ -152,11 +166,6 @@ namespace NeutrinoFluxReweight{
   
   ////////////////////
 double ThinTargetMC::getMCxs_pC_piK(int genid, double inc_mom){
-    double xx[13] ={12,20,31,40,50,60,70,80,90,100,110,120,158};
-    double yy[13] ={153386793./197812683.,160302538./197811564.,164508480./197831250.,166391359./197784915.,
-		    167860919./197822312.,168882647./197807739.,169681805./197803099.,170311264./197811098.,
-		    170860912./197822002.,171309291./197834756.,171651963./197811822.,171991260./197823012.,
-		  172902228./197804669.};
     
     int idx_lowp = -1;
     int idx_hip  = -1;
@@ -180,11 +189,6 @@ double ThinTargetMC::getMCxs_pC_piK(int genid, double inc_mom){
   }
   /////
 double ThinTargetMC::getMCxs_pC_nucleon(int genid, int pdg, double inc_mom){
-    double xx[13] ={12,20,31,40,50,60,70,80,90,100,110,120,158};
-    double yy[13] ={153386793./197812683.,160302538./197811564.,164508480./197831250.,166391359./197784915.,
-		    167860919./197822312.,168882647./197807739.,169681805./197803099.,170311264./197811098.,
-		    170860912./197822002.,171309291./197834756.,171651963./197811822.,171991260./197823012.,
-		  172902228./197804669.};
     
     int idx_lowp = -1;
     int idx_hip  = -1;
