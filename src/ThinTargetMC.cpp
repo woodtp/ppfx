@@ -4,14 +4,14 @@
 #include "ThinTargetMC.h"
 
 
-namespace NeutrinoFluxReweight{ 
-  
+namespace NeutrinoFluxReweight{
+
   ThinTargetMC* ThinTargetMC::instance = 0;
-  
+
   ThinTargetMC::ThinTargetMC(){
 
     const char* ppfxDir = getenv("PPFX_DIR");
-    char dirData[400]; 
+    char dirData[400];
     sprintf(dirData,"%s/data",ppfxDir);
     spart_prod.push_back("pip");
     spart_prod.push_back("pim");
@@ -27,18 +27,16 @@ namespace NeutrinoFluxReweight{
     mom_inc.push_back(70);mom_inc.push_back(80);
     mom_inc.push_back(90);mom_inc.push_back(100);
     mom_inc.push_back(110);mom_inc.push_back(120);
-    
-    TFile* ftot = new TFile(Form("%s/MC/FTFP/tot_prod_FTFP_BERT.root", dirData), "read");
+
+    // reads in fraction of production to total yields (including QE/fragmentation etc)
+    TFile* ftot = new TFile(Form("%s/MC/FTFP/frac_prod_FTFP_BERT.root", dirData), "read");
     int incE = 0;
     for(int i = 0; i < 13; i++){
       if(i < 12) incE = mom_inc[i];
       else incE = 158;
-      TH1D* htot = (TH1D*)ftot->Get(Form("tot_prod_xs_%dGeV", incE));
+      TH1D* htot = (TH1D*)ftot->Get(Form("frac_prod_xs_%dGeV", incE));
       xx[i] = incE;
       yy[i] = htot->Integral();
-    }
-    for(int i = 0; i < 13; i++){
-      yy[i] = yy[i]/yy[12];
     }
     ftot->Close();
 
@@ -67,7 +65,7 @@ namespace NeutrinoFluxReweight{
       else if(i==(qe_size-1)){
 	fqe_corr[i] = new TFile(Form("%s/MC/FTFP/yield_qe_corr_%s.root",dirData,spart_qe_corr[i].c_str()),"read");
 	for(int j=0;j<mom_size;j++)vqe_corr_n.push_back((TH1D*)fqe_corr[i]->Get(Form("frac_prod_xf_%dGeV",mom_inc[j])));
-      }      
+      }
     }
 
     //Scaling:
@@ -86,7 +84,7 @@ namespace NeutrinoFluxReweight{
 	tmp_scl.push_back((TH2F*)ThinTargetMC::fTTscale[ipart]->Get(Form("xF_pT_%dGeV",mom_scale[imom])));
       }
       hTTScl.push_back(tmp_scl);
-      tmp_scl.clear(); 
+      tmp_scl.clear();
     }
     //neutron scaling
     for(int imom=0;imom<Nmomscl;imom++){
@@ -94,12 +92,12 @@ namespace NeutrinoFluxReweight{
     }
 
   }
-  
+
   double ThinTargetMC::getMCval_pC_X(double incP, double xf,double pt, int pdgcode){
 
     //check:
-    if(incP<12)return -1;    
-    if(pdgcode!=211 && pdgcode!=-211 && pdgcode!=321 && pdgcode!=-321 && pdgcode!=2212 && pdgcode!=2112 && pdgcode!=130 && pdgcode!=310)return -1;    
+    if(incP<12)return -1;
+    if(pdgcode!=211 && pdgcode!=-211 && pdgcode!=321 && pdgcode!=-321 && pdgcode!=2212 && pdgcode!=2112 && pdgcode!=130 && pdgcode!=310)return -1;
     //idx:
     int idx_part = -1;
     int idx_qe_corr = -1;
@@ -129,7 +127,7 @@ namespace NeutrinoFluxReweight{
     }
     if(pdgcode ==  130)idx_part=5;
     if(pdgcode ==  310)idx_part=6;
-    
+
     double mcval    = 0.0;
     double qe_corr = 1.0;
     if(idx_part<7){
@@ -154,19 +152,19 @@ namespace NeutrinoFluxReweight{
       double qehi  = vqe_corr_n[idx_hip]->GetBinContent(binqe);
       qe_corr  = qelow + (incP-double(mom_inc[idx_lowp]))*(qehi-qelow)/(double(mom_inc[idx_hip])-double(mom_inc[idx_lowp]));
     }
-    
+
     mcval /=qe_corr;
-    
+
     //check:
     if(mcval<1.e-12 || mcval!=mcval)return -1;
-    
+
     return mcval;
-    
+
   }
-  
+
   ////////////////////
 double ThinTargetMC::getMCxs_pC_piK(int genid, double inc_mom){
-    
+
     int idx_lowp = -1;
     int idx_hip  = -1;
     for(int i=0;i<12;i++){
@@ -178,18 +176,19 @@ double ThinTargetMC::getMCxs_pC_piK(int genid, double inc_mom){
     double frac_low = yy[idx_lowp];
     double frac_hi  = yy[idx_hip];
     double frac_m   =  frac_low + (inc_mom-double(xx[idx_lowp]))*(frac_hi-frac_low)/(double(xx[idx_hip])-double(xx[idx_lowp]));
-    
-    if(genid==0)return frac_m*220.28099;
+
+    // 247.35752 is total pC xsec at 120 GeV (including QE/fragmentation etc)
+    if(genid==0)return frac_m*247.35752;
     else if(genid>0)return frac_m;
     else{
       std::cout<<"Something is wrong with gen "<<std::endl;
       return 1.0;
     }
-    
+
   }
   /////
 double ThinTargetMC::getMCxs_pC_nucleon(int genid, int pdg, double inc_mom){
-    
+
     int idx_lowp = -1;
     int idx_hip  = -1;
     for(int i=0;i<12;i++){
@@ -201,11 +200,11 @@ double ThinTargetMC::getMCxs_pC_nucleon(int genid, int pdg, double inc_mom){
     double frac_low = yy[idx_lowp];
     double frac_hi  = yy[idx_hip];
     double frac_m   =  frac_low + (inc_mom-double(xx[idx_lowp]))*(frac_hi-frac_low)/(double(xx[idx_hip])-double(xx[idx_lowp]));
-    
-    if(genid==0 && pdg==2212)return frac_m*220.28099;
+
+    if(genid==0 && pdg==2212)return frac_m*247.35752;
     if(genid>0  && pdg==2212)return frac_m;
     if(genid==0 && pdg==2112)return frac_m;
-    if(genid>0  && pdg==2112)return frac_m/220.28099;
+    if(genid>0  && pdg==2112)return frac_m/247.35752;
     return 1.0;
 
   }
@@ -214,5 +213,5 @@ double ThinTargetMC::getMCxs_pC_nucleon(int genid, int pdg, double inc_mom){
     if (instance == 0) instance = new ThinTargetMC;
     return instance;
   }
-  
+
 }
