@@ -31,6 +31,7 @@ namespace NeutrinoFluxReweight{
     // reads in fraction of production to total yields (including QE/fragmentation etc)
     TFile* ftot = new TFile(Form("%s/MC/FTFP/frac_prod_FTFP_BERT.root", dirData), "read");
     int incE = 0;
+    mc_tot_xs_prt = ((TH1D*)ftot->Get("tot_xs_120GeV"))->Integral();
     for(int i = 0; i < 13; i++){
       if(i < 12) incE = mom_inc[i];
       else incE = 158;
@@ -177,8 +178,8 @@ double ThinTargetMC::getMCxs_pC_piK(int genid, double inc_mom){
     double frac_hi  = yy[idx_hip];
     double frac_m   =  frac_low + (inc_mom-double(xx[idx_lowp]))*(frac_hi-frac_low)/(double(xx[idx_hip])-double(xx[idx_lowp]));
 
-    // 247.35752 is total pC xsec at 120 GeV (including QE/fragmentation etc)
-    if(genid==0)return frac_m*247.35752;
+    // mc_tot_xs_prt is total pC xsec at 120 GeV (including QE/fragmentation etc)
+    if(genid==0)return frac_m*mc_tot_xs_prt;
     else if(genid>0)return frac_m;
     else{
       std::cout<<"Something is wrong with gen "<<std::endl;
@@ -201,10 +202,10 @@ double ThinTargetMC::getMCxs_pC_nucleon(int genid, int pdg, double inc_mom){
     double frac_hi  = yy[idx_hip];
     double frac_m   =  frac_low + (inc_mom-double(xx[idx_lowp]))*(frac_hi-frac_low)/(double(xx[idx_hip])-double(xx[idx_lowp]));
 
-    if(genid==0 && pdg==2212)return frac_m*247.35752;
+    if(genid==0 && pdg==2212)return frac_m*mc_tot_xs_prt;
     if(genid>0  && pdg==2212)return frac_m;
     if(genid==0 && pdg==2112)return frac_m;
-    if(genid>0  && pdg==2112)return frac_m/247.35752;
+    if(genid>0  && pdg==2112)return frac_m/mc_tot_xs_prt;
     return 1.0;
 
   }
