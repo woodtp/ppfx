@@ -109,7 +109,29 @@ namespace NeutrinoFluxReweight{
     for(int itraj=0;itraj<(ntraj-1);itraj++){
       
       int pdg_inc=nu->ancestor[itraj].pdg;
-      double incP[3];
+      Int_t itraj_prod = itraj + 1;
+      Int_t pdg_prod   = nu->ancestor[itraj_prod].pdg;
+      std::string this_proc = std::string(nu->ancestor[itraj_prod].proc);
+      
+      // skip over etas and other swiftly decaying particles
+      // we are interested in their daughters
+      //It seems that the next while is causing seg fault in gcc 6.3:
+        /*while( is_fast_decay(pdg_prod) ){
+      itraj_prod++;
+      Nskip++;
+      pdg_prod = nu->ancestor[itraj_prod].pdg;
+      }*/
+      if( is_fast_decay(pdg_prod) ){
+        for(int ifast = itraj_prod + 1; ifast < (ntraj-1); ifast++ ){
+          itraj_prod++;
+          Nskip++;
+          pdg_prod = nu->ancestor[itraj_prod].pdg;
+          if( !is_fast_decay(pdg_prod) ) break;	  
+        }
+      }
+      // Nitish Nayak : 2024
+      // The comment below seems to be relevant for OLD G4NuMI (produced with USEMODGEANT4)
+
       // itraj is the index of the projectile in each interaction.
       // one can find out what it did by looking at
       //       ancestor[itraj+1].proc
@@ -119,7 +141,7 @@ namespace NeutrinoFluxReweight{
       //
       // (1) If the particle at itraj *interacts* then pprod seems to hold
       // the momentum of the particle just before the interaction
-      // 
+      //
       // (2) If the particle at itraj *decays* then pprod seems to hold the
       // momentum of the particle at itraj-1, just before it interacts
       //
@@ -127,38 +149,17 @@ namespace NeutrinoFluxReweight{
       // something that looks like the momentum of the parent.
       //
       // Generally for hadron production studies, the second case isn't interesting
-    //  if(nu->ancestor[itraj].pprodpz==0)std::cout<<"Found incident proton with 0 GeV Energy"<<std::endl;
-      if( nu->ancestor[itraj].pprodpz != 0){
-	incP[0] = nu->ancestor[itraj].pprodpx;
-	incP[1] = nu->ancestor[itraj].pprodpy;
-	incP[2] = nu->ancestor[itraj].pprodpz;
-      
-      }
-      else{
-	incP[0]=nu->ancestor[itraj].stoppx;
-	incP[1]=nu->ancestor[itraj].stoppy;
-	incP[2]=nu->ancestor[itraj].stoppz;
-      }
-      Int_t itraj_prod = itraj + 1;
-      Int_t pdg_prod   = nu->ancestor[itraj_prod].pdg;
-      std::string this_proc = std::string(nu->ancestor[itraj_prod].proc);
-      
-      // skip over etas and other swiftly decaying particles
-      // we are interested in their daughters
-      //It seems that the next while is causing seg fault in gcc 6.3:
-      /*while( is_fast_decay(pdg_prod) ){
-	itraj_prod++;
-	Nskip++;
-	pdg_prod = nu->ancestor[itraj_prod].pdg;
-	}*/
-      if( is_fast_decay(pdg_prod) ){
-	for(int ifast = itraj_prod + 1; ifast < (ntraj-1); ifast++ ){
-	  itraj_prod++;
-	  Nskip++;
-          pdg_prod = nu->ancestor[itraj_prod].pdg;
-	  if( !is_fast_decay(pdg_prod) ) break;	  
-	}
-      }
+      //  if(nu->ancestor[itraj].pprodpz==0)std::cout<<"Found incident proton with 0 GeV Energy"<<std::endl;
+
+      // Nitish Nayak : 2024
+      // dk2nu files produced from the main_modern_g4 branch circa 2024 now seems to have a more rationalized system for filling these
+      // I think the effect of this on ppfx is that it's just off by 1
+      // Also removing the pz = 0 guard because I don't want to depend on another type of calculation for these
+      double incP[3];
+      incP[0] = nu->ancestor[itraj_prod].pprodpx;
+      incP[1] = nu->ancestor[itraj_prod].pprodpy;
+      incP[2] = nu->ancestor[itraj_prod].pprodpz;
+
       double prodP[3];
       prodP[0] = nu->ancestor[itraj_prod].startpx;
       prodP[1] = nu->ancestor[itraj_prod].startpy;
@@ -171,10 +172,10 @@ namespace NeutrinoFluxReweight{
       std::string this_vol=nu->ancestor[itraj_prod].ivol;
       
       //Get Rid of Hydrogen
-        if(pdg_prod == 1000010020 || pdg_inc == 1000010020|| pdg_prod == 1000010030 || pdg_inc == 1000010030 || pdg_inc == 1000020030||pdg_prod==1000020030){
-      // std::cout<<"InteractionChainData::Unusual pdgcode found "<<pdg_prod<<std::endl; //For now just skipping these deuterons
-	continue;
-	}
+      if(pdg_prod == 1000010020 || pdg_inc == 1000010020|| pdg_prod == 1000010030 || pdg_inc == 1000010030 || pdg_inc == 1000020030||pdg_prod==1000020030){
+        // std::cout<<"InteractionChainData::Unusual pdgcode found "<<pdg_prod<<std::endl; //For now just skipping these deuterons
+        continue;
+      }
       
       InteractionData inter(itraj, incP,pdg_inc,prodP,pdg_prod,
 			    this_vol,this_proc,vtx);   
