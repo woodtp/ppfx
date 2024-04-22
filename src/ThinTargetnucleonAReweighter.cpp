@@ -231,7 +231,7 @@ namespace NeutrinoFluxReweight{
       // add extra uncertainties for xF < 0
       // treatment here is basically 40% corr. across hadron species + 40% uncorr. across all species, xF bins 
       double negxF_corrunc = 1.;
-      if(aa.xF < 0.) negxF_corrunc = bin_prtleftover_inc;
+      // if(aa.xF < 0.) negxF_corrunc = bin_prtleftover_inc;
       
       if(aa.Prod_pdg == 211) wgt = vbin_prt_inc_pip[binnu] * negxF_corrunc;
       else if(aa.Prod_pdg ==-211) wgt = vbin_prt_inc_pim[binnu] * negxF_corrunc;
@@ -245,7 +245,7 @@ namespace NeutrinoFluxReweight{
     else if(aa.Inc_pdg ==2112){
    
       double negxF_corrunc = 1.;
-      if(aa.xF < 0.) negxF_corrunc = bin_neuleftover_inc;
+      // if(aa.xF < 0.) negxF_corrunc = bin_neuleftover_inc;
       
       if(aa.Prod_pdg == 211) wgt = vbin_neu_inc_pip[binnu] * negxF_corrunc;
       else if(aa.Prod_pdg ==-211) wgt = vbin_neu_inc_pim[binnu] * negxF_corrunc;
@@ -256,6 +256,17 @@ namespace NeutrinoFluxReweight{
       else if(aa.Prod_pdg ==2112) wgt = vbin_neu_inc_n[binnu] * negxF_corrunc;
       else wgt = bin_neuleftover_inc;	
     }						
+
+//    std::cout << "[ TONY DEBUG ] ===========================\n"
+//              << "  aa.Vol      = " << aa.Vol << '\n'
+//              << "  aa.Inc_pdg  = " << aa.Inc_pdg << '\n'
+//              << "  aa.Prod_pdg = " << aa.Prod_pdg << '\n'
+//              << "  aa.xF       = " << aa.xF << '\n'
+//              << "  aa.pT       = " << aa.Pt << '\n'
+//              << "  not_handled = " << not_handled << '\n'
+//              << "  weight      = " << wgt << '\n'
+//              << "==========================================\n";
+
     
     if(wgt < 0.) return 0.0001; // cap this at near-0 instead of returning 1.
     if(wgt > 10.) return 1.0;   // ignore larger weights than this
