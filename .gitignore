@@ -3,3 +3,5 @@ lib/
 *.o
 html/
 latex/
+*.txt
+!CMakeLists.txt
