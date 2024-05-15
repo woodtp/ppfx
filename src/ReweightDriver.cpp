@@ -83,7 +83,7 @@ namespace NeutrinoFluxReweight{
       return wgt;
     };
 
-    auto reweight_att_abs = [&icd](IInteractionChainReweighting* const reweighter){
+    auto reweight_att_abs = [&icd](IInteractionChainReweighting* const reweighter) -> double {
       auto const& nodes = reweighter->canReweight(icd);
       //we just see for the first position (primary proton)
       if(nodes.empty() || !nodes[0])
