@@ -12,6 +12,7 @@ import shutil
 import tarfile
 import subprocess
 from pathlib import Path
+from datetime import datetime
 
 SCRATCH_AREA = Path(f"/pnfs/icarus/scratch/users/{os.getenv('USER')}")
 CACHE_PNFS_AREA = SCRATCH_AREA / "grid_cache/"
@@ -20,7 +21,8 @@ PWD = Path(os.getcwd())
 ##################################################
 # Job Defaults
 ##################################################
-N_JOBS = 495  # set this equal to the number of input files
+N_JOBS = 993  # set this equal to the number of input files
+# N_JOBS = 495  # set this equal to the number of input files
 INPUT_OPTIONS = "scripts/inputs_default.xml"
 # OPTION = "QuarterWeight"
 # INPUT_OPTIONS      = "scripts/inputs_"+OPTION+".xml"
@@ -69,12 +71,13 @@ IDET = ICARUS_geometrical_center
 
 # name of the dataset
 # DATA_TAG = "Nilay_NuMI_1MW_RHC"
-# DATA_TAG = "userdataset_2024_04_16_numi_g4104_FHC"
-DATA_TAG = "userdataset_awood_numi_g4_10_4_RHC"
+DATA_TAG = "userdataset_awood_NuMI_g4_10_4_all"
+# DATA_TAG = f"userdataset_awood_numi_g4_10_4_RHC"
 
 TARFILE_NAME = "local_install.tar.gz"
 
-OUTDIR = SCRATCH_AREA / f"ppfx_{DATA_TAG}"
+today = datetime.today().strftime("%Y-%m-%d")
+OUTDIR = SCRATCH_AREA / f"{today}_ppfx_{DATA_TAG}"
 
 ##################################################
 

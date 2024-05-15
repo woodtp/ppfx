@@ -5,12 +5,12 @@ INCLUDES = -I./include -I$(shell root-config --incdir) -I$(BOOSTROOT) -I${DK2NU}
 DEPLIBS=$(shell root-config --libs) -lEG
 
 CC	=	g++
-COPTS	=	-fPIC -DLINUX -O0  -g $(shell root-config --cflags) 
+COPTS	=	-fPIC -DLINUX -O2 -g $(shell root-config --cflags) -Wall -Wextra -pedantic
 FLAGS   =       -g
 
 all:    lib programs doxy
 
-lib: libppfx.so 
+lib: libppfx.so
 
 libppfx.so: $(OBJS_LIB)
 	if [ ! -d lib ]; then mkdir -p lib; fi
@@ -40,7 +40,7 @@ $(PROGS): % : src/%.o $(OBJS_LIB)  libppfx.so
 %.o: %.cxx
 	$(CC) $(COPTS) $(INCLUDES) -c -o $@ $<
 
-doxy: 
+doxy:
 	doxygen doxygen/config_doxygen
 
 clean:  deldoxy delobj dellib delbin
@@ -49,7 +49,7 @@ delobj:
 	-rm src/*.o
 
 dellib:
-	if [ -d lib ]; then rm -rf lib; fi 		
+	if [ -d lib ]; then rm -rf lib; fi
 
 delbin:
 	if [ -d bin ]; then rm -rf bin; fi
