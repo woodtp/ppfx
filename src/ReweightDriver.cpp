@@ -4,91 +4,103 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-namespace NeutrinoFluxReweight{
+namespace NeutrinoFluxReweight
+{
 
-  ReweightDriver::ReweightDriver(int iuniv, const ParameterTable& cv_pars, const ParameterTable& univ_pars, std::string fileIn)
-    : iUniv(iuniv), cvPars(cv_pars), univPars(univ_pars), fileOptions(fileIn)
-  {
+ReweightDriver::ReweightDriver(int iuniv, const ParameterTable &cv_pars, const ParameterTable &univ_pars, std::string fileIn) :
+    iUniv(iuniv), cvPars(cv_pars), univPars(univ_pars), fileOptions(fileIn)
+{
     ParseOptions();
     Configure();
-  }
+}
 
-  void ReweightDriver::Configure(){
+void ReweightDriver::Configure()
+{
 
     //Creating the vector of reweighters:
 
-    if(doMIPPNumi){
-      MIPP_NUMI_PION_Universe = new MIPPNumiPionYieldsReweighter(iUniv,cvPars,univPars);
-      MIPP_NUMI_KAON_Universe = new MIPPNumiKaonYieldsReweighter(iUniv,cvPars,univPars);
+    if (doMIPPNumi)
+    {
+        MIPP_NUMI_PION_Universe = new MIPPNumiPionYieldsReweighter(iUniv, cvPars, univPars);
+        MIPP_NUMI_KAON_Universe = new MIPPNumiKaonYieldsReweighter(iUniv, cvPars, univPars);
     }
 
-    TARG_ATT_Universe = new TargetAttenuationReweighter(iUniv,cvPars,univPars);
-    VOL_ABS_IC_Universe = new AbsorptionICReweighter(iUniv,cvPars,univPars);
-    VOL_ABS_DPIP_Universe = new AbsorptionDPIPReweighter(iUniv,cvPars,univPars);
-    VOL_ABS_DVOL_Universe = new AbsorptionDVOLReweighter(iUniv,cvPars,univPars);
-    VOL_ABS_NUCLEON_Universe = new NucleonAbsorptionOutOfTargetReweighter(iUniv,cvPars,univPars);
-    VOL_ABS_OTHER_Universe = new OtherAbsorptionOutOfTargetReweighter(iUniv,cvPars,univPars);
+    TARG_ATT_Universe = new TargetAttenuationReweighter(iUniv, cvPars, univPars);
+    VOL_ABS_IC_Universe = new AbsorptionICReweighter(iUniv, cvPars, univPars);
+    VOL_ABS_DPIP_Universe = new AbsorptionDPIPReweighter(iUniv, cvPars, univPars);
+    VOL_ABS_DVOL_Universe = new AbsorptionDVOLReweighter(iUniv, cvPars, univPars);
+    VOL_ABS_NUCLEON_Universe = new NucleonAbsorptionOutOfTargetReweighter(iUniv, cvPars, univPars);
+    VOL_ABS_OTHER_Universe = new OtherAbsorptionOutOfTargetReweighter(iUniv, cvPars, univPars);
 
-    THINTARGET_PC_PION_Universe = new ThinTargetpCPionReweighter(iUniv,cvPars,univPars);
-    THINTARGET_PC_KAON_Universe = new ThinTargetpCKaonReweighter(iUniv,cvPars,univPars);
-    THINTARGET_NC_PION_Universe = new ThinTargetnCPionReweighter(iUniv,cvPars,univPars);
-    THINTARGET_PC_NUCLEON_Universe = new ThinTargetpCNucleonReweighter(iUniv,cvPars,univPars);
-    THINTARGET_MESON_INCIDENT_Universe = new ThinTargetMesonIncidentReweighter(iUniv,cvPars,univPars);
-    THINTARGET_NUCLEON_A_Universe = new ThinTargetnucleonAReweighter(iUniv,cvPars,univPars);
-    OTHER_Universe = new OtherReweighter(iUniv,cvPars,univPars);
+    THINTARGET_PC_PION_Universe = new ThinTargetpCPionReweighter(iUniv, cvPars, univPars);
+    THINTARGET_PC_KAON_Universe = new ThinTargetpCKaonReweighter(iUniv, cvPars, univPars);
+    THINTARGET_NC_PION_Universe = new ThinTargetnCPionReweighter(iUniv, cvPars, univPars);
+    THINTARGET_PC_NUCLEON_Universe = new ThinTargetpCNucleonReweighter(iUniv, cvPars, univPars);
+    THINTARGET_MESON_INCIDENT_Universe = new ThinTargetMesonIncidentReweighter(iUniv, cvPars, univPars);
+    THINTARGET_NUCLEON_A_Universe = new ThinTargetnucleonAReweighter(iUniv, cvPars, univPars);
+    OTHER_Universe = new OtherReweighter(iUniv, cvPars, univPars);
+}
 
-  }
-
-  void ReweightDriver::ParseOptions(){
+void ReweightDriver::ParseOptions()
+{
     //Parsing the file input:
     using boost::property_tree::ptree;
     ptree top;
     std::string val = "";
-    read_xml(fileOptions.c_str(),top,2); // option 2 removes comment strings
-    ptree& options = top.get_child("inputs.Settings");
+    read_xml(fileOptions.c_str(), top, 2); // option 2 removes comment strings
+    ptree &options = top.get_child("inputs.Settings");
 
     val = options.get<std::string>("Reweighters");
-    if(val=="MIPPNuMIOn")doMIPPNumi = true;
-    else doMIPPNumi = false;
+    if (val == "MIPPNuMIOn")
+        doMIPPNumi = true;
+    else
+        doMIPPNumi = false;
+}
 
-  }
-
-  double ReweightDriver::calculateWeight(const InteractionChainData& icd)
-  {
+double ReweightDriver::calculateWeight(const InteractionChainData &icd)
+{
 
     //Boolean flags:
     std::vector<bool> interaction_nodes(icd.interaction_chain.size(), false);
 
     bool has_mipp = false;
-    auto reweight_MIPP = [&interaction_nodes, &icd, &has_mipp] (IInteractionChainReweighting* const reweighter) -> double {
-      interaction_nodes = reweighter->canReweight(icd);
-      for (auto const& node : interaction_nodes) {
-	if (!node) continue;
-	has_mipp = true;
+    auto reweight_MIPP = [&interaction_nodes, &icd, &has_mipp](IInteractionChainReweighting *const reweighter) -> double
+    {
+        interaction_nodes = reweighter->canReweight(icd);
+        for (auto const &node : interaction_nodes)
+        {
+            if (!node)
+                continue;
+            has_mipp = true;
+            return reweighter->calculateWeight(icd);
+        }
+        return 1.0;
+    };
+
+    auto const &interaction_chain = icd.interaction_chain;
+    auto reweight = [&interaction_nodes, &interaction_chain](IInteractionReweighting *const reweighter) -> double
+    {
+        double wgt = 1.0;
+        for (auto it = interaction_nodes.rbegin(); it != interaction_nodes.rend(); ++it)
+        {
+            if (*it)
+                continue;
+            auto const &aa = interaction_chain[std::distance(interaction_nodes.rbegin(), it)];
+            if (!reweighter->canReweight(aa))
+                continue;
+            wgt *= reweighter->calculateWeight(aa);
+            *it = true;
+        }
+        return wgt;
+    };
+
+    auto reweight_att_abs = [&icd](IInteractionChainReweighting *const reweighter) -> double
+    {
+        auto const &nodes = reweighter->canReweight(icd);
+        //we just see for the first position (primary proton)
+        if (nodes.empty() || !nodes[0])
+            return 1.0;
         return reweighter->calculateWeight(icd);
-      }
-      return 1.0;
-    };
-
-    auto const& interaction_chain = icd.interaction_chain;
-    auto reweight = [&interaction_nodes, &interaction_chain] (IInteractionReweighting* const reweighter) -> double {
-      double wgt = 1.0;
-      for (auto it = interaction_nodes.rbegin(); it != interaction_nodes.rend(); ++it) {
-        if(*it) continue;
-	auto const& aa = interaction_chain[std::distance(interaction_nodes.rbegin(), it)];
-	if(!reweighter->canReweight(aa)) continue;
-	wgt *= reweighter->calculateWeight(aa);
-	*it = true;
-      }
-      return wgt;
-    };
-
-    auto reweight_att_abs = [&icd](IInteractionChainReweighting* const reweighter) -> double {
-      auto const& nodes = reweighter->canReweight(icd);
-      //we just see for the first position (primary proton)
-      if(nodes.empty() || !nodes[0])
-	return 1.0;
-      return reweighter->calculateWeight(icd);
     };
 
     /// ----- PROCESS INTERACTION NODES ----- ///
@@ -119,24 +131,26 @@ namespace NeutrinoFluxReweight{
     nuA_wgt = 1.0;
     nuA_dvol_wgt = 1.0;
     nuA_othervol_wgt = 1.0;
-    for(auto it = interaction_nodes.rbegin(); it != interaction_nodes.rend(); ++it) {
-      if(*it) continue;
-      auto const& aa = icd.interaction_chain[std::distance(interaction_nodes.rbegin(), it)];
-      if(!THINTARGET_NUCLEON_A_Universe->canReweight(aa)) continue;
+    for (auto it = interaction_nodes.rbegin(); it != interaction_nodes.rend(); ++it)
+    {
+        if (*it)
+            continue;
+        auto const &aa = icd.interaction_chain[std::distance(interaction_nodes.rbegin(), it)];
+        if (!THINTARGET_NUCLEON_A_Universe->canReweight(aa))
+            continue;
 
-      double rewval = THINTARGET_NUCLEON_A_Universe->calculateWeight(aa);
+        double rewval = THINTARGET_NUCLEON_A_Universe->calculateWeight(aa);
 
-      nuA_wgt *= rewval;
+        nuA_wgt *= rewval;
 
-      const bool is_data_vol = (aa.Vol == "TGT1")
-			    || (aa.Vol == "BudalMonitor")
-			    || (aa.Vol == "Budal_HFVS")
-			    || (aa.Vol == "Budal_VFHS");
+        const bool is_data_vol = (aa.Vol == "TGT1") || (aa.Vol == "BudalMonitor") || (aa.Vol == "Budal_HFVS") || (aa.Vol == "Budal_VFHS");
 
-      if (is_data_vol) nuA_dvol_wgt *= rewval; // Interactions occuring primarily with carbon
-      else nuA_othervol_wgt *= rewval;         // Interactions everywhere else
+        if (is_data_vol)
+            nuA_dvol_wgt *= rewval; // Interactions occuring primarily with carbon
+        else
+            nuA_othervol_wgt *= rewval; // Interactions everywhere else
 
-      *it = true;
+        *it = true;
     }
 
     //Any other interaction not handled yet:
@@ -163,32 +177,25 @@ namespace NeutrinoFluxReweight{
     //Correction of any other particle on Al, Fe and He.
     abs_other_wgt = reweight_att_abs(VOL_ABS_OTHER_Universe);
 
-    tot_abs_wgt *= abs_ic_wgt*abs_dpip_wgt*abs_dvol_wgt*abs_nucleon_wgt*abs_other_wgt;
+    tot_abs_wgt *= abs_ic_wgt * abs_dpip_wgt * abs_dvol_wgt * abs_nucleon_wgt * abs_other_wgt;
 
-    const double tot_wgt = mipp_pion_wgt
-                         * mipp_kaon_wgt
-                         * pC_pi_wgt
-                         * pC_k_wgt
-                         * pC_nu_wgt
-                         * meson_inc_wgt
-                         * nuA_wgt
-                         * other_wgt
-                         * att_wgt
-                         * tot_abs_wgt;
+    const double tot_wgt = mipp_pion_wgt * mipp_kaon_wgt * pC_pi_wgt * pC_k_wgt * pC_nu_wgt * meson_inc_wgt * nuA_wgt * other_wgt * att_wgt * tot_abs_wgt;
 
-    if(tot_wgt != tot_wgt) {
-      std::cout << "Alert nan total wgt... check!!!" << std::endl;
-      return 1.0;
+    if (tot_wgt != tot_wgt)
+    {
+        std::cout << "Alert nan total wgt... check!!!" << std::endl;
+        return 1.0;
     }
     return tot_wgt;
-  }
+}
 
-  ReweightDriver::~ReweightDriver()
-  {
+ReweightDriver::~ReweightDriver()
+{
 
-    if(doMIPPNumi){
-      delete MIPP_NUMI_PION_Universe;
-      delete MIPP_NUMI_KAON_Universe;
+    if (doMIPPNumi)
+    {
+        delete MIPP_NUMI_PION_Universe;
+        delete MIPP_NUMI_KAON_Universe;
     }
     delete TARG_ATT_Universe;
     delete VOL_ABS_IC_Universe;
@@ -203,6 +210,6 @@ namespace NeutrinoFluxReweight{
     delete THINTARGET_MESON_INCIDENT_Universe;
     delete THINTARGET_NUCLEON_A_Universe;
     delete OTHER_Universe;
-  }
-
 }
+
+} // namespace NeutrinoFluxReweight
