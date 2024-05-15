@@ -8,6 +8,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <iomanip>
+#include <memory>
 
 #include "TH1D.h"
 
@@ -51,22 +52,21 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
 
   TH1::SetDefaultSumw2();
 
-  const char* thisDir = getenv("PPFX_DIR");
+  // const char* thisDir = getenv("PPFX_DIR");
   int idet = -1;
-  bool doing_precalculated_pos = false;
+  // bool doing_precalculated_pos = false;
 
-  NeutrinoFluxAuxiliar::NuWeight* nuweight;
-  if( std::string(cyydet) == "none" && std::string(czzdet) == "none" ){
+  // NeutrinoFluxAuxiliar::NuWeight* nuweight;
+  const bool doing_precalculated_pos = std::string(cyydet) == "none" && std::string(czzdet) == "none";
+  if(doing_precalculated_pos){
     idet = atoi(cxxdet);
-    doing_precalculated_pos = true;
   }
-  else{
-    std::vector<double> vdet;
-    double xxdet = atof(cxxdet); vdet.push_back(xxdet);
-    double yydet = atof(cyydet); vdet.push_back(yydet);
-    double zzdet = atof(czzdet); vdet.push_back(zzdet);
-    nuweight = new NeutrinoFluxAuxiliar::NuWeight(vdet);
-  }
+  // else{
+  //   std::vector<double> vdet;
+  //   double xxdet = atof(cxxdet); vdet.push_back(xxdet);
+  //   double yydet = atof(cyydet); vdet.push_back(yydet);
+  //   double zzdet = atof(czzdet); vdet.push_back(zzdet);
+  // }
 
   std::cout<< "Instance of MakeReweight()" <<std::endl;
   MakeReweight* makerew = MakeReweight::getInstance();
@@ -78,20 +78,32 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
 
   const int Nuniverses = makerew->GetNumberOfUniversesUsed();
 
-  TH1D* hnom   [Nnuhel][Nparent];
+  // TH1D* hnom   [Nnuhel][Nparent];
+  std::vector<std::vector<TH1D*>> hnom(Nnuhel, std::vector<TH1D*>(Nparent));
 
-  TH1D* hcv    [Nnuhel];
-  TH1D* hthin  [Nnuhel][Nuniverses];
-  TH1D* hmipp  [Nnuhel][Nuniverses];
-  TH1D* hatt   [Nnuhel][Nuniverses];
-  TH1D* hothers[Nnuhel][Nuniverses];
-  TH1D* htotal [Nnuhel][Nuniverses];
+  // TH1D* hcv    [Nnuhel];
+  std::vector<TH1D*> hcv(Nnuhel);
+  // TH1D* hthin  [Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hthin(Nnuhel, std::vector<TH1D*>(Nuniverses));
+  // TH1D* hmipp  [Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hmipp(Nnuhel, std::vector<TH1D*>(Nuniverses));
+  // TH1D* hatt   [Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hatt(Nnuhel, std::vector<TH1D*>(Nuniverses));
+  // TH1D* hothers[Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hothers(Nnuhel, std::vector<TH1D*>(Nuniverses));
+  // TH1D* htotal [Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> htotal(Nnuhel, std::vector<TH1D*>(Nuniverses));
 
-  TH1D* hthin_pCpi  [Nnuhel][Nuniverses];
-  TH1D* hthin_pCk   [Nnuhel][Nuniverses];
-  TH1D* hthin_nCpi  [Nnuhel][Nuniverses];
-  TH1D* hthin_pCnu  [Nnuhel][Nuniverses];
-  TH1D* hthin_mesinc[Nnuhel][Nuniverses];
+  // TH1D* hthin_pCpi  [Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hthin_pCpi(Nnuhel, std::vector<TH1D*>(Nuniverses));
+  // TH1D* hthin_pCk   [Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hthin_pCk(Nnuhel, std::vector<TH1D*>(Nuniverses));
+  // TH1D* hthin_nCpi  [Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hthin_nCpi(Nnuhel, std::vector<TH1D*>(Nuniverses));
+  // TH1D* hthin_pCnu  [Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hthin_pCnu(Nnuhel, std::vector<TH1D*>(Nuniverses));
+  // TH1D* hthin_mesinc[Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hthin_mesinc(Nnuhel, std::vector<TH1D*>(Nuniverses));
   // TH1D* hthin_mesinc_projectile_pip[Nnuhel][Nuniverses];
   // TH1D* hthin_mesinc_projectile_pim[Nnuhel][Nuniverses];
   // TH1D* hthin_mesinc_projectile_Kp[Nnuhel][Nuniverses];
@@ -102,18 +114,19 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
   // TH1D* hthin_mesinc_daughter_Kp[Nnuhel][Nuniverses];
   // TH1D* hthin_mesinc_daughter_Km[Nnuhel][Nuniverses];
   // TH1D* hthin_mesinc_daughter_K0[Nnuhel][Nuniverses];
-  TH1D* hthin_nua[Nnuhel][Nuniverses];
-  TH1D* hthin_nua_datavol[Nnuhel][Nuniverses];
-  TH1D* hthin_nua_othervol[Nnuhel][Nuniverses];
+  // TH1D* hthin_nua[Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hthin_nua(Nnuhel, std::vector<TH1D*>(Nuniverses));
+  // TH1D* hthin_nua_datavol[Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hthin_nua_datavol(Nnuhel, std::vector<TH1D*>(Nuniverses));
+  // TH1D* hthin_nua_othervol[Nnuhel][Nuniverses];
+  std::vector<std::vector<TH1D*>> hthin_nua_othervol(Nnuhel, std::vector<TH1D*>(Nuniverses));
   // TH1D* hthin_nuAlFe[Nnuhel][Nuniverses];
 
   // TH1D* hpCQEL [Nnuhel][Nuniverses];
 
+  const TString xtitle = "E_{#nu} [GeV]";
+  const TString ytitle = "##nu_{unoscillated} [m^{-2}]";
   for(int ii=0;ii<Nnuhel;ii++){
-    const TString xtitle = "E_{#nu} [GeV]";
-    const TString ytitle = "##nu_{unoscillated} [m^{-2}]";
-
-
     for(int kk=0;kk<Nparent; kk++){
       if(kk == 0)
         hnom[ii][kk] = new TH1D(Form("hnom_%s",nuhel[ii]), Form("Uncorrected %s flux",nulabel[ii]), NbinsE,emin,emax);
@@ -327,13 +340,14 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
     /**
      * Cut on parents
      */
-    const int parent_id = dk2nu->decay.ptype;
-    makerew->calculateWeights(dk2nu,dkmeta);
+    makerew->calculateWeights(dk2nu, dkmeta);
     if(doing_precalculated_pos){
       fluxWGT = ( (dk2nu->nuray)[idet].wgt )*(dk2nu->decay.nimpwt)/3.1416;
       nuenergy = (dk2nu->nuray)[idet].E;
     }
     else{
+      std::vector<double> vdet = { atof(cxxdet), atof(cyydet), atof(czzdet) };
+      auto const nuweight = std::make_unique<NeutrinoFluxAuxiliar::NuWeight>(vdet);
       nuweight->calculate_weight(dk2nu);
       fluxWGT  = (nuweight->wgt)*(dk2nu->decay.nimpwt)/3.1416;
       nuenergy = nuweight->enu;
@@ -342,6 +356,7 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
     if(nuidx<0){
       std::cout<<"=> Wrong neutrino file"<<std::endl;
     }
+    const int parent_id = dk2nu->decay.ptype;
     switch(parent_id) {
       case PIP:
       case PIM:
