@@ -8,16 +8,16 @@
 #include "PDGParticleCodes.h"
 
 namespace NeutrinoFluxReweight{
-  
+
   ThinTargetnucleonAReweighter::ThinTargetnucleonAReweighter(int iuniv, const ParameterTable& cv_pars, const ParameterTable& univ_pars):iUniv(iuniv),cvPars(cv_pars),univPars(univ_pars){
-    
+
     ThinTargetBins* Thinbins =  ThinTargetBins::getInstance();
-    
+
     vbin_data_pip.reserve(Thinbins->GetNbins_material_scaling());
     vbin_data_pim.reserve(Thinbins->GetNbins_material_scaling());
     vbin_data_kap.reserve(Thinbins->GetNbins_material_scaling());
     vbin_data_kam.reserve(Thinbins->GetNbins_material_scaling());
-    
+
     //Currently, We are using the same number of xF ranges for nucleon inc. and meson inc.
     vbin_prt_inc_pip.reserve(Thinbins->GetNbins_meson_incident());
     vbin_prt_inc_pim.reserve(Thinbins->GetNbins_meson_incident());
@@ -35,9 +35,9 @@ namespace NeutrinoFluxReweight{
     vbin_neu_inc_n.reserve(Thinbins->GetNbins_meson_incident());
 
     char namepar[100];
-    
+
     data_prod_xs = univPars.getParameterValue("prod_prtC_xsec");
-    
+
     //4 particles
     const char* cinc[4] = {"pip","pim","kap","kam"};
     for(int ii=0;ii<4;ii++){
@@ -55,7 +55,7 @@ namespace NeutrinoFluxReweight{
     //2 incident nucleons, 7 produced particles:
     const char* nuinc[2] = {"prt","neu"};
     const char* cpro[7] = {"pip","pim","kap","kam","k0","n","p"};
-    
+
     for(int ii=0;ii<2;ii++){
       for(int jj=0;jj<7;jj++){
         for(int kk=0;kk<Thinbins->GetNbins_meson_incident();kk++){
@@ -83,17 +83,18 @@ namespace NeutrinoFluxReweight{
     bin_prtleftover_inc = univPars.getParameterValue(std::string(namepar));
     sprintf(namepar,"ThinTarget_neuleftover_incident_%d",0);
     bin_neuleftover_inc = univPars.getParameterValue(std::string(namepar));
-    
-  }
-  
-  ThinTargetnucleonAReweighter::~ThinTargetnucleonAReweighter(){
-    
+
   }
 
-  bool ThinTargetnucleonAReweighter::canReweight(const InteractionData& aa){
+  ThinTargetnucleonAReweighter::~ThinTargetnucleonAReweighter(){
+
+  }
+
+  bool ThinTargetnucleonAReweighter::canReweight(const InteractionData& aa)
+  {
     return aa.Inc_pdg == pdg::P || aa.Inc_pdg == pdg::N;
   }
-  
+
   double ThinTargetnucleonAReweighter::calculateWeight(const InteractionData& aa) {
 
     double wgt = 1.0;
@@ -107,9 +108,9 @@ namespace NeutrinoFluxReweight{
       && (aa.Vol != "TGT1" && aa.Vol != "BudalMonitor" && aa.Vol != "Budal_HFVS" && aa.Vol != "Budal_VFHS")
       && (aa.Prod_pdg == pdg::PIP || aa.Prod_pdg == pdg::PIM || aa.Prod_pdg ==pdg::KP || aa.Prod_pdg == pdg::KM || aa.Prod_pdg ==pdg::K0S || aa.Prod_pdg == pdg::K0L)
       && (bin>=0);
-    
+
     if((mode=="REF")||(mode=="OPT")){ //AA: we don't use this
-      is_data_based = (aa.Inc_P >= 12.0) && (aa.Vol != "TargetNoSplitSegment" && aa.Vol != "TargetFinHorizontal") && 
+      is_data_based = (aa.Inc_P >= 12.0) && (aa.Vol != "TargetNoSplitSegment" && aa.Vol != "TargetFinHorizontal") &&
         (aa.Prod_pdg == pdg::PIP || aa.Prod_pdg == pdg::PIM || aa.Prod_pdg ==pdg::KP || aa.Prod_pdg == pdg::KM || aa.Prod_pdg ==pdg::K0S || aa.Prod_pdg == pdg::K0L) &&
         (bin>=0);
     }
@@ -123,7 +124,7 @@ namespace NeutrinoFluxReweight{
 
     bool not_handled = false;
     if(is_data_based){
-      ThinTargetMC*  mc        = ThinTargetMC::getInstance(); 
+      ThinTargetMC*  mc        = ThinTargetMC::getInstance();
       double         mc_prod   = mc->getMCxs_pC_piK(0,aa.Inc_P);
       double         fact_gen0 = data_prod_xs/mc_prod;
       MakeReweight*  makerew   = MakeReweight::getInstance();
@@ -134,7 +135,7 @@ namespace NeutrinoFluxReweight{
 
           if(iUniv==-1)tt_pCPionRew = (makerew->cv_rw)->THINTARGET_PC_PION_Universe;
           else tt_pCPionRew = (makerew->vec_rws[iUniv])->THINTARGET_PC_PION_Universe;
-          
+
           if(tt_pCPionRew->canReweight(aux_aa2)){
             wgt = tt_pCPionRew->calculateWeight(aux_aa2);
             if(aux_aa2.gen == 0) wgt *= fact_gen0;
@@ -146,7 +147,7 @@ namespace NeutrinoFluxReweight{
 
           if(iUniv==-1)tt_pCKaonRew = (makerew->cv_rw)->THINTARGET_PC_KAON_Universe;
           else tt_pCKaonRew = (makerew->vec_rws[iUniv])->THINTARGET_PC_KAON_Universe;
-          
+
           if(tt_pCKaonRew->canReweight(aux_aa2)){
             wgt = tt_pCKaonRew->calculateWeight(aux_aa2);
             if(aux_aa2.gen == 0) wgt *= fact_gen0;
@@ -170,7 +171,7 @@ namespace NeutrinoFluxReweight{
         else not_handled = true;
       }
       else not_handled = true;
-      
+
       double scaling = 1.0;
       if(aa.Prod_pdg == pdg::PIP) scaling = vbin_data_pip[bin];
       if(aa.Prod_pdg == pdg::PIM) scaling = vbin_data_pim[bin];
@@ -180,36 +181,52 @@ namespace NeutrinoFluxReweight{
       wgt *= scaling;
       if(!not_handled)return wgt;
     } //if(is_data_based)
-    
- 
-    //trick... using a function for meson incident... same binning.
-    int binnu      = Thinbins->meson_inc_BinID(aa.xF,aa.Pt,pdg::PIP);
-    if(binnu<0)return 1.0;
 
+
+    //trick... using a function for meson incident... same binning.
+    int binnu      = Thinbins->meson_inc_BinID(aa.xF, aa.Pt, pdg::PIP);
+    // we've modified the meson bins to include negative xF, so these are unphysical bins
+    // but don't return 1. either way
+    if(binnu < 0){
+      if(aa.Inc_pdg == pdg::P) return bin_prtleftover_inc;
+      else if(aa.Inc_pdg == pdg::N) return bin_neuleftover_inc;
+    }
 
     if(aa.Inc_pdg == pdg::P){
-      if     (aa.Prod_pdg == pdg::PIP) wgt = vbin_prt_inc_pip[binnu];
-      else if(aa.Prod_pdg == pdg::PIM) wgt = vbin_prt_inc_pim[binnu];
-      else if(aa.Prod_pdg == pdg::KP)  wgt = vbin_prt_inc_kap[binnu];
-      else if(aa.Prod_pdg == pdg::KM)  wgt = vbin_prt_inc_kam[binnu];
-      else if(aa.Prod_pdg == pdg::K0L || aa.Prod_pdg ==pdg::K0S) wgt = vbin_prt_inc_k0[binnu];
-      else if(aa.Prod_pdg == pdg::P)   wgt = vbin_prt_inc_p[binnu];
-      else if(aa.Prod_pdg == pdg::N)   wgt = vbin_prt_inc_n[binnu];
+
+      // add extra uncertainties for xF < 0
+      // treatment here is basically 40% corr. across hadron species + 40% uncorr. across all species, xF bins
+      double negxF_corrunc = 1.;
+      // if(aa.xF < 0.) negxF_corrunc = bin_prtleftover_inc;
+
+      if(aa.Prod_pdg == pdg::PIP) wgt = vbin_prt_inc_pip[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::PIM) wgt = vbin_prt_inc_pim[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::KP) wgt = vbin_prt_inc_kap[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::KM) wgt = vbin_prt_inc_kam[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::K0L || aa.Prod_pdg == pdg::K0S) wgt = vbin_prt_inc_k0[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::P) wgt = vbin_prt_inc_p[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::N) wgt = vbin_prt_inc_n[binnu] * negxF_corrunc;
       else wgt = bin_prtleftover_inc;
     }
     else if(aa.Inc_pdg == pdg::N){
-      if     (aa.Prod_pdg == pdg::PIP) wgt = vbin_neu_inc_pip[binnu];
-      else if(aa.Prod_pdg == pdg::PIM) wgt = vbin_neu_inc_pim[binnu];
-      else if(aa.Prod_pdg == pdg::KP)  wgt = vbin_neu_inc_kap[binnu];
-      else if(aa.Prod_pdg == pdg::KM)  wgt = vbin_neu_inc_kam[binnu];
-      else if(aa.Prod_pdg == pdg::K0L || aa.Prod_pdg ==pdg::K0S) wgt = vbin_neu_inc_k0[binnu];
-      else if(aa.Prod_pdg == pdg::P)   wgt = vbin_neu_inc_p[binnu];
-      else if(aa.Prod_pdg == pdg::N)   wgt = vbin_neu_inc_n[binnu];
+
+      double negxF_corrunc = 1.;
+      // if(aa.xF < 0.) negxF_corrunc = bin_neuleftover_inc;
+
+      if(aa.Prod_pdg == pdg::PIP) wgt = vbin_neu_inc_pip[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::PIM) wgt = vbin_neu_inc_pim[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::KP) wgt = vbin_neu_inc_kap[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::KM) wgt = vbin_neu_inc_kam[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::K0L || aa.Prod_pdg == pdg::K0S) wgt = vbin_neu_inc_k0[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::P) wgt = vbin_neu_inc_p[binnu] * negxF_corrunc;
+      else if(aa.Prod_pdg == pdg::N) wgt = vbin_neu_inc_n[binnu] * negxF_corrunc;
       else wgt = bin_neuleftover_inc;
     }
-  
+
+
+    if(wgt < 0.) return 0.0001; // cap this at near-0 instead of returning 1.
+    if(wgt > 10.) return 1.0;   // ignore larger weights than this
+
     return wgt;
   }
-  
-
 }

@@ -34,10 +34,10 @@ echo $(date) "======== UPDATE g4numi run number to select input ========"
 echo PROCESS=$PROCESS
 eval process=${PROCESS}
 echo process=$process
-#INPUT_FILE=$(sed "$((process+1))q;d" filelist_${DATA_TAG})
-INPUT_FILE="/pnfs/numix/persistent/users/nbostan/G4NuMI_RHC_new_target/g4numiv6_minervame_me000z-200i_\${PROCESS}_0001.root"
+INPUT_FILE=$(sed "$((process+1))q;d" filelist_${DATA_TAG}.txt)
+# INPUT_FILE="/pnfs/numix/persistent/users/nbostan/G4NuMI_RHC_new_target/g4numiv6_minervame_me000z-200i_\${PROCESS}_0001.root"
 name_file=$(basename $INPUT_FILE)
-#eval name_file=$(basename $INPUT_FILE)
+# eval name_file=$(basename $INPUT_FILE)
 
 echo name_file=$name_file
 echo INPUT_FILE=$INPUT_FILE

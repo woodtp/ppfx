@@ -9,25 +9,23 @@
 using namespace std;
 
 // declarations of functions found further down in this file
-int CreateHists(const char* output_filename, const char* filename, int elow, int ehigh, int nu_id, bool NA49cuts, bool MIPPcuts);
+int CreateHists(const char* output_filename, const char* filename, float elow, float ehigh, int nu_id, bool NA49cuts, bool MIPPcuts);
 void make_directories(TFile *f);
 void name_hists(HistList * hists, TFile * out_file);
 void scale_hists(HistList * hists, double total_weight=1);
 void write_hists(HistList * hists, TFile * out_file);
 
-int main( int argc, char *argv[]) 
+int main( int argc, char *argv[])
 {
 
   //! Default parameters
   std::vector<std::string> par;
   par.push_back("CreateHists.cpp");
-  par.push_back("./rootfiles/testout.root");
-  //par.push_back("/minerva/data/flux_hadron_samples/flux/g4numi/v4_test/le010z185i/*_0300_0001.root");
-  //par.push_back("/minerva/data/flux_hadron_samples/flux/g4numi/v4_test/le010z185i/*_031*_0001.root");
-  par.push_back("/minerva/data/flux_hadron_samples/flux/g4numi/v4_test/le010z185i/*.root");
-  par.push_back("0");
-  par.push_back("120");
-  par.push_back("56");
+  par.push_back("/uboone/data/users/bnayak/ppfx/ppfx_interactive/rootfiles/microboone/numu_RHC_tests.root");
+  par.push_back("/pnfs/uboone/persistent/users/bnayak/flux_files/nova/me000z-200i/g4numiv6_minervame_me000z-200i_10[0-2]_0006.root");
+  par.push_back("0.2");
+  par.push_back("5");
+  par.push_back("14");
   par.push_back("0");//NA49
   par.push_back("0");//MIPP
 
@@ -37,27 +35,26 @@ int main( int argc, char *argv[])
       par.at(i) = argv[i];
     }
   }
-  
-  int min = atoi(par[3].c_str());
-  int max = atoi(par[4].c_str());
+
+  float min = std::stof(par[3].c_str());
+  float max = std::stof(par[4].c_str());
   int nu_id = atoi(par[5].c_str());
   bool NA49cuts = atoi(par[6].c_str());
   bool MIPPcuts = atoi(par[7].c_str());
 
   std::cout<<"min E   : "<<min<<"GeV"<<std::endl;
   std::cout<<"max E   : "<<max<<"GeV"<<std::endl;
-  std::cout<<"nuhel   : "<<nu_id<<std::endl;  
+  std::cout<<"nuhel   : "<<nu_id<<std::endl;
   std::cout<<"TT cut  : "<<NA49cuts<<std::endl;
   std::cout<<"MIPP cut: "<<MIPPcuts<<std::endl;
-    
-    //int CreateHists(const char* output_filename, const char* filename, int elow, int ehigh, int nu_id=56, bool NA49cuts=false, bool MIPPcuts=false))
+
   return CreateHists(par[1].c_str(), par[2].c_str(), min, max, nu_id, NA49cuts, MIPPcuts);
 }
 
 
-int CreateHists(const char* output_filename, const char* filename, int elow, int ehigh, int nu_id=56, bool NA49cuts=false, bool MIPPcuts=false)
+int CreateHists(const char* output_filename, const char* filename, float elow, float ehigh, int nu_id=56, bool NA49cuts=false, bool MIPPcuts=false)
 {
-        //single array histos	
+        //single array histos
 	int nvol = IMap::nvol;
 	if(getenv("MODE")=="REF"||getenv("MODE")=="OPT") nvol = IMap::nvoldune;
 	vector<TH2D *> hmat(IMap::npop);
@@ -74,23 +71,32 @@ int CreateHists(const char* output_filename, const char* filename, int elow, int
 	vector< vector<TH1F *> > henergyvolume(nvol, vector<TH1F*>(IMap::npop));
 	vector< vector<TH1F *> > hkepop(IMap::npop, vector<TH1F*>(IMap::npop));
 	vector< vector<TH1F *> > htmpop(IMap::npop, vector<TH1F*>(IMap::npop));
-  
+
 	//individual histos
 	TH2D * h_in_vs_mat = NULL;
 
+	vector<TH2D *> hxfpt_parents(IMap::npop);
+	vector<TH1D *> hchainsize_parents(IMap::npop);
+	vector<TH2D *> hxfpt_grandparents(IMap::npop);
+	vector<TH2D *> henuxf_parents(IMap::npop);
+	vector<TH2D *> henuxf_grandparents(IMap::npop);
+
+
 	//collect histos in a list
-	HistList hists = {hmat, hvol, hmatbkw, hxfpt_tot, henergytotal, 
-			  hkepop_tot, htmpop_tot, hxfpt, henergymaterial, 
+	HistList hists = {hxfpt_parents, hchainsize_parents, hxfpt_grandparents,
+				henuxf_parents, henuxf_grandparents,
+				hmat, hvol, hmatbkw, hxfpt_tot, henergytotal,
+			  hkepop_tot, htmpop_tot, hxfpt, henergymaterial,
 			  henergyvolume, hkepop, htmpop, h_in_vs_mat};
 
 	//make root file
 	cout << "Making output file " << output_filename << endl;
 	TFile *out_file= new TFile(output_filename,"RECREATE");
-	
-	//make directories in the output root file.	
+
+	//make directories in the output root file.
 	cout << "Making directories in " << output_filename << endl;
 	make_directories(out_file);
-	
+
 	//name hists
 	cout << "Naming Hists" << endl;
 	name_hists(& hists, out_file);
@@ -98,28 +104,28 @@ int CreateHists(const char* output_filename, const char* filename, int elow, int
 	//Make an object of many neutrino ancestral lines	from the ntuples
 	cout << "Opening flux ntuples" << endl;
 
-	TChain* tdk2nu   = new TChain("dk2nuTree");  
-	TChain* tdkmeta   = new TChain("dkmetaTree");  
+	TChain* tdk2nu   = new TChain("dk2nuTree");
+	TChain* tdkmeta   = new TChain("dkmetaTree");
 	tdk2nu->Add(filename);
 	tdkmeta->Add(filename);
 	//Loop over the neutrinos and fill histos
-	cout << "Filling histograms" << endl;	
+	cout << "Filling histograms" << endl;
 	FillIMapHistsOpts opts;
 	opts.elow=elow; opts.ehigh=ehigh; opts.nuid=nu_id;
 	opts.cut_thintarget=NA49cuts; opts.cut_mipp=MIPPcuts;
 	double total_weight=FillIMapHists(tdk2nu, tdkmeta, &hists, &opts);
-	
+
 	cout<< "Total weight: "<<total_weight<<endl;
 	//Scale the histos
 	cout << "Scaling Histos" << endl;
 	scale_hists(& hists,total_weight);
- 
+
 	//Write hists
- 	cout << "Writing Histos" << endl;	
+ 	cout << "Writing Histos" << endl;
 	write_hists(& hists, out_file);
-    
+
 	out_file->Close();
-	
+
 	return 0;
 
 } //END INT MAP
@@ -130,12 +136,6 @@ int CreateHists(const char* output_filename, const char* filename, int elow, int
 //name_hists
 //scale_hists
 //write_hists
-
-
-
-
-
-
 
 // ----------------------------------------------
 // Make directories in the output root file
@@ -150,6 +150,8 @@ void make_directories(TFile *f){
   using namespace IMap;
     f->mkdir("Projectile");
     f->mkdir("Produced");
+		f->mkdir("Parents");
+		f->mkdir("Grandparents");
 
     for(int j=0;j<IMap::npop;j++){
       f->cd("Projectile");
@@ -161,7 +163,7 @@ void make_directories(TFile *f){
       // Projectile/{particle}/Energy_Volumes
       gDirectory->mkdir("Energy_Volumes");
     }
-    
+
     for(int j=0;j<IMap::npop;j++){
       f->cd("Produced");
       // Produced/{particle}
@@ -173,7 +175,7 @@ void make_directories(TFile *f){
 // Name all the histograms
 // ----------------------------------------------
 void name_hists(HistList * hists, TFile * out_file){
-		
+
   char namefile[100];
   using namespace IMap;
     // ----------------------------------------------
@@ -185,53 +187,53 @@ void name_hists(HistList * hists, TFile * out_file){
     // henergytotal[9]
     // henergymaterial[5][9]
     // henergyvolume[193][9]
-    
-    
+
+
     // Will be in Projectile/h_in_vs_mat
     hists->_h_in_vs_mat = new TH2D("h_in_vs_mat",";material ; incident particle",50,0,50,50,0,50);
 
-    hists->_h_nint_vs_enu = new TH2D("h_nint_vs_enu","all interactions;neutrino energy (GeV); number of interactions",120,0,120,20,-0.5,19.5);
-    hists->_h_nint_vs_enu_cuts=new TH2D("h_nint_vs_enu_cuts", "interactions not covered by HP;neutrino energy (GeV); number of interactions",120,0,120,20,-0.5,19.5) ;
-    
-    hists->_h_aveint_vs_enu_thin_pCpion     = new TH1D("h_aveint_vs_enu_thin_pCpion","thin target pC->pion;neutrino energy (GeV); number of interactions",120,0,120);
-    hists->_h_aveint_vs_enu_thin_pCkaon     = new TH1D("h_aveint_vs_enu_thin_pCkaon","thin target pC->kaon;neutrino energy (GeV); number of interactions",120,0,120);
-    hists->_h_aveint_vs_enu_thin_nCpion     = new TH1D("h_aveint_vs_enu_thin_nCpion","thin target nC->pion;neutrino energy (GeV); number of interactions",120,0,120);
-    hists->_h_aveint_vs_enu_thin_pCnucleon  = new TH1D("h_aveint_vs_enu_thin_pCnucleon","thin target pC->nucleon;neutrino energy (GeV); number of interactions",120,0,120);
-    hists->_h_aveint_vs_enu_thin_mesoninc   = new TH1D("h_aveint_vs_enu_thin_mesoninc","thin target meson incident;neutrino energy (GeV); number of interactions",120,0,120);
-    hists->_h_aveint_vs_enu_thin_nucleona   = new TH1D("h_aveint_vs_enu_thin_nucleona","thin target nuclen-A;neutrino energy (GeV); number of interactions",120,0,120);
-    hists->_h_aveint_vs_enu_others          = new TH1D("h_aveint_vs_enu_others","Others;neutrino energy (GeV); number of interactions",120,0,120);
-    hists->_h_aveint_vs_enu_tot             = new TH1D("h_aveint_vs_enu_tot","total;neutrino energy (GeV); number of interactions",120,0,120);
-    hists->_h_nuflux   = new TH1D("h_nuflux","#nu flux;neutrino energy (GeV); #nu/m^{2}",120,0,120);
+    hists->_h_nint_vs_enu = new TH2D("h_nint_vs_enu","all interactions;neutrino energy (GeV); number of interactions",50,0,5,20,-0.5,19.5);
+    hists->_h_nint_vs_enu_cuts=new TH2D("h_nint_vs_enu_cuts", "interactions not covered by HP;neutrino energy (GeV); number of interactions",50,0,5,20,-0.5,19.5) ;
+
+    hists->_h_aveint_vs_enu_thin_pCpion     = new TH1D("h_aveint_vs_enu_thin_pCpion","thin target pC->pion;neutrino energy (GeV); number of interactions",50,0,5);
+    hists->_h_aveint_vs_enu_thin_pCkaon     = new TH1D("h_aveint_vs_enu_thin_pCkaon","thin target pC->kaon;neutrino energy (GeV); number of interactions",50,0,5);
+    hists->_h_aveint_vs_enu_thin_nCpion     = new TH1D("h_aveint_vs_enu_thin_nCpion","thin target nC->pion;neutrino energy (GeV); number of interactions",50,0,5);
+    hists->_h_aveint_vs_enu_thin_pCnucleon  = new TH1D("h_aveint_vs_enu_thin_pCnucleon","thin target pC->nucleon;neutrino energy (GeV); number of interactions",50,0,5);
+    hists->_h_aveint_vs_enu_thin_mesoninc   = new TH1D("h_aveint_vs_enu_thin_mesoninc","thin target meson incident;neutrino energy (GeV); number of interactions",50,0,5);
+    hists->_h_aveint_vs_enu_thin_nucleona   = new TH1D("h_aveint_vs_enu_thin_nucleona","thin target nuclen-A;neutrino energy (GeV); number of interactions",50,0,5);
+    hists->_h_aveint_vs_enu_others          = new TH1D("h_aveint_vs_enu_others","Others;neutrino energy (GeV); number of interactions",50,0,5);
+    hists->_h_aveint_vs_enu_tot             = new TH1D("h_aveint_vs_enu_tot","total;neutrino energy (GeV); number of interactions",50,0,5);
+    hists->_h_nuflux   = new TH1D("h_nuflux","#nu flux;neutrino energy (GeV); #nu/m^{2}",50,0,5);
 
     hists->_h_occ_xfpt_pc_pip = new TH2D("h_occ_xfpt_pc_pip",";xF; pT (GeV/c)",100,0,1.0,50,0,1.0);
     hists->_h_occ_xfpt_pc_kp = new TH2D("h_occ_xfpt_pc_kp",";xF; pT (GeV/c)",100,0,1.0,50,0,1.0);
     hists->_h_hpwgt_xfpt_pc_pip = new TH2D("h_hpwgt_xfpt_pc_pip",";xF; pT (GeV/c)",100,0,1.0,50,0,1.0);
     hists->_h_hpwgt_xfpt_pc_kp = new TH2D("h_hpwgt_xfpt_pc_kp",";xF; pT (GeV/c)",100,0,1.0,50,0,1.0);
-    
+
     for(int k=0;k<IMap::npop;k++)
     {
         sprintf(namefile,"Projectile/%s",popparticle[k].c_str());
         out_file->cd(namefile);
-        
+
         sprintf(namefile,"hmats%s",popparticle[k].c_str());
         // Projectile/{particle}/hmats{particle}
         hists->_hmat[k]=new TH2D(namefile,popparticle[k].c_str(),50,0,50,50,0,50);
-			
+
         sprintf(namefile,"hvols%s",popparticle[k].c_str());
         // Projectile/{particle}/hvols{particle}
         hists->_hvol[k]=new TH2D(namefile,popparticle[k].c_str(),50,0,50,50,0,50);
-        
-        
+
+
         sprintf(namefile,"henergy%s",popparticle[k].c_str());
         // Projectile/{particle}/henergy{particle}
         hists->_henergytotal[k] = new TH1F(namefile,popparticle[k].c_str(),1000,0,200);
-        
+
         hists->_henergytotal[k]->GetXaxis()->SetTitle("Energy (GeV)");
         hists->_henergytotal[k]->GetYaxis()->SetTitle("Fraction of ancestry");
-        
+
         sprintf(namefile,"Projectile/%s/Energy_Materials",popparticle[k].c_str());
         out_file->cd(namefile);
-        
+
         for(int i=0;i<IMap::nspecialmat;i++)
 	 {
             sprintf(namefile,"henergy%s%s",popparticle[k].c_str(),matlist[i].c_str());
@@ -241,15 +243,15 @@ void name_hists(HistList * hists, TFile * out_file){
 						hists->_henergymaterial[i][k]->SetTitle(namefile);
             hists->_henergymaterial[i][k]->GetXaxis()->SetTitle("Energy (GeV)");
             hists->_henergymaterial[i][k]->GetYaxis()->SetTitle("Event Counts");
-	
+
 	 }
-        
+
         sprintf(namefile,"Projectile/%s/Energy_Volumes",popparticle[k].c_str());
         out_file->cd(namefile);
-        
+
         for(int i=0;i<nvol;i++)
         {
-            
+
 	  sprintf(namefile,"henergy%s%s",popparticle[k].c_str(),IMap::volume[i].c_str());
             // Projectile/{particle}/Energy_Volumes/henergy{particle}{volume}
             hists->_henergyvolume[i][k]=new TH1F(namefile,"",1000,0,200);
@@ -259,8 +261,8 @@ void name_hists(HistList * hists, TFile * out_file){
             hists->_henergyvolume[i][k]->GetYaxis()->SetTitle("Event Counts");
 				}
     }
-    
-    
+
+
     // ----------------------------------------------
     // Make histos in Produced/
     // ----------------------------------------------
@@ -288,7 +290,7 @@ void name_hists(HistList * hists, TFile * out_file){
         sprintf(namefile,"hxfpt%s",popparticle[j].c_str());
         // Produced/{particle}/hxfpt{particle}
         hists->_hxfpt_tot[j]=new TH2D(namefile,"",500,-1,1,100,0,2);
-        
+
         for(int k=0;k<IMap::npop;k++)
         {
             sprintf(namefile,"hke%s_%s",popparticle[j].c_str(),popparticle[k].c_str());
@@ -302,7 +304,34 @@ void name_hists(HistList * hists, TFile * out_file){
             hists->_hxfpt[j][k]=new TH2D(namefile,"",500,-1,1,100,0,2);
         }
     }
-    
+
+		out_file->cd("Parents");
+		hists->_hparentsmat = new TH2D("h_parent_vs_mat",";material ; parent particle",50,0,50,50,0,50);
+		hists->_hparentsgp = new TH2D("h_parent_vs_grandparent",";grandparent ; parent particle",50,0,50,50,0,50);
+		hists->_hgrandparentsggp = new TH2D("h_grandparent_vs_ggrandparent",";great grandparent ; grandparent particle",50,0,50,50,0,50);
+		hists->_hchainsize = new TH1D("h_chainsize", "", 10, 0.5, 10.5);
+    hists->_henuxf_allparents = new TH2D("henuxf_allparents",";neutrino energy (GeV); parent xF",50,0,5,100,-1,1);
+		for(int j=0;j<IMap::npop;j++)
+		{
+				sprintf(namefile,"hxfpt%s", popparticle[j].c_str());
+				hists->_hxfpt_parents[j] = new TH2D(namefile, ";xF; pT (GeV/c)", 500,-1,1,100,0,2);
+				sprintf(namefile,"hchainsize%s", popparticle[j].c_str());
+				hists->_hchainsize_parents[j] = new TH1D(namefile, "", 10, 0.5, 10.5);
+				sprintf(namefile,"henuxf%s", popparticle[j].c_str());
+				hists->_henuxf_parents[j] = new TH2D(namefile, ";neutrino energy (GeV); parent xF", 50,0,5,100,-1,1);
+
+		}
+		out_file->cd("Grandparents");
+		hists->_hgrandparentsmat = new TH2D("h_grandparent_vs_mat",";material ; grandparent particle",50,0,50,50,0,50);
+    hists->_henuxf_allgrandparents = new TH2D("henuxf_allgrandparents",";neutrino energy (GeV); grandparent xF",50,0,5,100,-1,1);
+		for(int j=0;j<IMap::npop;j++)
+		{
+				sprintf(namefile,"hxfpt%s", popparticle[j].c_str());
+				hists->_hxfpt_grandparents[j] = new TH2D(namefile, ";xF; pT (GeV/c)", 500,-1,1,100,0,2);
+				sprintf(namefile,"henuxf%s", popparticle[j].c_str());
+				hists->_henuxf_grandparents[j] = new TH2D(namefile, ";neutrino energy (GeV); grandparent xF", 50,0,5,100,-1,1);
+
+		}
 }
 
 
@@ -310,19 +339,19 @@ void name_hists(HistList * hists, TFile * out_file){
 // Scale all histograms by the total weight
 // ----------------------------------------------
 void scale_hists(HistList * hists, double total_weight){
-		
+
     hists->_h_in_vs_mat->Scale(1./total_weight);
     hists->_h_nint_vs_enu->Scale(1./total_weight);
     hists->_h_nint_vs_enu_cuts->Scale(1./total_weight);
 
-    hists->_h_aveint_vs_enu_thin_pCpion->Divide(hists->_h_nuflux); 
-    hists->_h_aveint_vs_enu_thin_pCkaon->Divide(hists->_h_nuflux); 
-    hists->_h_aveint_vs_enu_thin_nCpion->Divide(hists->_h_nuflux); 
-    hists->_h_aveint_vs_enu_thin_pCnucleon->Divide(hists->_h_nuflux); 
-    hists->_h_aveint_vs_enu_thin_mesoninc->Divide(hists->_h_nuflux); 
-    hists->_h_aveint_vs_enu_thin_nucleona->Divide(hists->_h_nuflux); 
-    hists->_h_aveint_vs_enu_others->Divide(hists->_h_nuflux); 
-    hists->_h_aveint_vs_enu_tot->Divide(hists->_h_nuflux); 
+    hists->_h_aveint_vs_enu_thin_pCpion->Divide(hists->_h_nuflux);
+    hists->_h_aveint_vs_enu_thin_pCkaon->Divide(hists->_h_nuflux);
+    hists->_h_aveint_vs_enu_thin_nCpion->Divide(hists->_h_nuflux);
+    hists->_h_aveint_vs_enu_thin_pCnucleon->Divide(hists->_h_nuflux);
+    hists->_h_aveint_vs_enu_thin_mesoninc->Divide(hists->_h_nuflux);
+    hists->_h_aveint_vs_enu_thin_nucleona->Divide(hists->_h_nuflux);
+    hists->_h_aveint_vs_enu_others->Divide(hists->_h_nuflux);
+    hists->_h_aveint_vs_enu_tot->Divide(hists->_h_nuflux);
 
     hists->_h_aveint_vs_enu_thin_pCpion->Scale(1./pival);
     hists->_h_aveint_vs_enu_thin_pCkaon->Scale(1./pival);
@@ -364,13 +393,28 @@ void scale_hists(HistList * hists, double total_weight){
       } // for(int m=0;m<5;m++)
     } // for(int j=0;j<9;j++)
 
+		hists->_hparentsmat->Scale(1./total_weight);
+		hists->_hgrandparentsmat->Scale(1./total_weight);
+		hists->_hchainsize->Scale(1./total_weight);
+	  hists->_hparentsgp->Scale(1./total_weight);
+	  hists->_hgrandparentsggp->Scale(1./total_weight);
+		hists->_henuxf_allparents->Scale(1./total_weight);
+		hists->_henuxf_allgrandparents->Scale(1./total_weight);
+	  for(int j=0;j<IMap::npop;j++){
+			hists->_hxfpt_parents[j]->Scale(1./total_weight);
+			hists->_hchainsize_parents[j]->Scale(1./total_weight);
+			hists->_hxfpt_grandparents[j]->Scale(1./total_weight);
+			hists->_henuxf_parents[j]->Scale(1./total_weight);
+			hists->_henuxf_grandparents[j]->Scale(1./total_weight);
+		}
+
 }
 
 // ----------------------------------------------
 // Write all histos to file
 // ----------------------------------------------
 void write_hists(HistList * hists, TFile * out_file){
-    
+
   char namefile[100];
   using namespace IMap;
   for(int j=0;j<IMap::npop;j++)
@@ -380,13 +424,13 @@ void write_hists(HistList * hists, TFile * out_file){
         hists->_hmat[j]->Write();
         hists->_hvol[j]->Write();
         hists->_henergytotal[j]->Write();
-        
+
         gDirectory->cd("Energy_Materials");
         for(int m=0;m<IMap::nspecialmat;m++)
         {
-            
+
             hists->_henergymaterial[m][j]->Write();
-            
+
         }
         gDirectory->cd("..");
         gDirectory->cd("Energy_Volumes");
@@ -395,8 +439,8 @@ void write_hists(HistList * hists, TFile * out_file){
             hists->_henergyvolume[m][j]->Write();
         }
     }
-    
-    
+
+
   for(int j=0;j<IMap::npop;j++)
     {
         sprintf(namefile,"Produced/%s",popparticle[j].c_str());
@@ -405,7 +449,7 @@ void write_hists(HistList * hists, TFile * out_file){
         hists->_hkepop_tot[j]->Write();
         hists->_htmpop_tot[j]->Write();
         hists->_hxfpt_tot[j]->Write();
-        
+
         for(int k=0;k<IMap::npop;k++)
         {
             hists->_hkepop[j][k]->Write();
@@ -421,11 +465,11 @@ void write_hists(HistList * hists, TFile * out_file){
   hists->_h_nint_vs_enu->Write();
   hists->_h_nint_vs_enu_cuts->Write();
 
-  hists->_h_aveint_vs_enu_thin_pCpion->Write(); 
+  hists->_h_aveint_vs_enu_thin_pCpion->Write();
   hists->_h_aveint_vs_enu_thin_pCkaon->Write();
   hists->_h_aveint_vs_enu_thin_nCpion->Write();
   hists->_h_aveint_vs_enu_thin_pCnucleon->Write();
-  hists->_h_aveint_vs_enu_thin_mesoninc->Write(); 
+  hists->_h_aveint_vs_enu_thin_mesoninc->Write();
   hists->_h_aveint_vs_enu_thin_nucleona->Write();
   hists->_h_aveint_vs_enu_others->Write();
   hists->_h_aveint_vs_enu_tot->Write();
@@ -436,4 +480,23 @@ void write_hists(HistList * hists, TFile * out_file){
   hists->_h_hpwgt_xfpt_pc_pip->Write();
   hists->_h_hpwgt_xfpt_pc_kp->Write();
 
+	out_file->cd("Parents");
+	hists->_hparentsmat->Write();
+	hists->_hchainsize->Write();
+	hists->_hparentsgp->Write();
+	hists->_henuxf_allparents->Write();
+	for(int j=0; j<IMap::npop; j++){
+		hists->_hxfpt_parents[j]->Write();
+		hists->_hchainsize_parents[j]->Write();
+		hists->_henuxf_parents[j]->Write();
+	}
+
+	out_file->cd("Grandparents");
+	hists->_hgrandparentsmat->Write();
+	hists->_hgrandparentsggp->Write();
+	hists->_henuxf_allgrandparents->Write();
+	for(int j=0; j<IMap::npop; j++){
+		hists->_hxfpt_grandparents[j]->Write();
+		hists->_henuxf_grandparents[j]->Write();
+	}
 }

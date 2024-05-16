@@ -11,7 +11,7 @@ namespace NeutrinoFluxReweight{
     char dirData[400]; 
     sprintf(dirData,"%s/data",ppfxDir);
 
-    AttenuationMC::fInelXS_MC = new TFile(Form("%s/MC/InelXS_geant4.root",dirData),"read");
+    AttenuationMC::fInelXS_MC = new TFile(Form("%s/MC/FTFP/InelXS_geant4.root",dirData),"read");
 
     AttenuationMC::fzpos_tgt_MC_le = new TFile(Form("%s/MIPP/tarpos_yield_le.root",dirData),"read");
     AttenuationMC::fzpos_tgt_MC_me = new TFile(Form("%s/MIPP/tarpos_yield_me.root",dirData),"read");

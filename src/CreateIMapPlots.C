@@ -89,8 +89,8 @@ int main( int argc, char *argv[])
   //! Default parameters
   std::vector<std::string> par;
   par.push_back("CreatePlots");
-  par.push_back("/minerva/app/users/kleykamp/interactions_study/flux3_4gev_1.root");
-  par.push_back("/minerva/app/users/kleykamp/interactions_study/Plots/h_in_vs_mat_3_4GeV.png");
+  par.push_back("/uboone/data/users/bnayak/ppfx/ppfx_interactive/rootfiles/testout.root");
+  par.push_back("/uboone/data/users/bnayak/ppfx/ppfx_interactive/plots/h_in_vs_mat.png");
   par.push_back("Projectile/h_in_vs_mat");
   par.push_back("2");
 

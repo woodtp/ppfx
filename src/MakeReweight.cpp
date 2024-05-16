@@ -14,6 +14,7 @@ namespace NeutrinoFluxReweight{
     fileOptions = fileIn;
     ParseOptions();
     Initialize();
+    init = true;
   }
 
   void MakeReweight::ParseOptions(){
@@ -25,20 +26,20 @@ namespace NeutrinoFluxReweight{
 
     mippCorrOption = options.get<std::string>("MIPPCorrOption");
     Nuniverses = options.get<int>("NumberOfUniverses");
-    
+
   }
   void MakeReweight::Initialize(){
-    
+
     //Getting MIPP binning and the correlation parameters:
-    CentralValuesAndUncertainties* cvu = CentralValuesAndUncertainties::getInstance();
-    MIPPNumiYieldsBins*  myb =  MIPPNumiYieldsBins::getInstance(); 
-    ThinTargetBins*  thinbin =  ThinTargetBins::getInstance(); 
-    MIPPNumiMC*  mymc =  MIPPNumiMC::getInstance(); 
+    CentralValuesAndUncertainties* cvu = CentralValuesAndUncertainties::getInstance();;
+    MIPPNumiYieldsBins*  myb =  MIPPNumiYieldsBins::getInstance();
+    ThinTargetBins*  thinbin =  ThinTargetBins::getInstance();
+    MIPPNumiMC*  mymc =  MIPPNumiMC::getInstance();
     const char* ppfxDir = getenv("PPFX_DIR");
-       
+
     std::cout<<"Initializing correlation parameters"<<std::endl;
     cvu->readFromXML(Form("%s/uncertainties/Parameters_%s.xml",ppfxDir,mippCorrOption.c_str()));
-    
+
     std::cout<<"Initializing bin data conventions"<<std::endl;
     myb->pip_data_from_xml(Form("%s/data/BINS/MIPPNumiData_PIP_Bins.xml",ppfxDir));
     myb->pim_data_from_xml(Form("%s/data/BINS/MIPPNumiData_PIM_Bins.xml",ppfxDir));
@@ -51,7 +52,7 @@ namespace NeutrinoFluxReweight{
     thinbin->pC_p_from_xml(Form("%s/data/BINS/ThinTarget_pC_p_Bins.xml",ppfxDir));
     thinbin->pC_n_from_xml(Form("%s/data/BINS/ThinTarget_pC_n_Bins.xml",ppfxDir));
     thinbin->material_scaling_from_xml(Form("%s/data/BINS/ThinTarget_material_scaling_Bins.xml",ppfxDir));
-    
+
     std::cout<<"Initializing MC values"<<std::endl;
     mymc->pip_mc_from_xml(Form("%s/data/MIPP/MIPPNuMI_MC_PIP.xml",ppfxDir));
     mymc->pim_mc_from_xml(Form("%s/data/MIPP/MIPPNuMI_MC_PIM.xml",ppfxDir));
@@ -63,8 +64,7 @@ namespace NeutrinoFluxReweight{
     //Reweighter drivers:
     vec_rws.reserve(Nuniverses);
     std::cout<<"Initializing reweight drivers for "<<Nuniverses<<" universes"<<std::endl;
-    
-    const int base_universe=1000000;
+
     // cvPars.reserve(Nuniverses+1);
     univPars.reserve(Nuniverses+1);
 
@@ -79,21 +79,21 @@ namespace NeutrinoFluxReweight{
       vec_wgts.push_back(1.0);
     }
     std::cout << std::endl;
-    
+
     //Central Value driver:
-    //by convention, we use universe -1 to hold the cv. It is in agreement with CentralValueAndUncertainties  
+    //by convention, we use universe -1 to hold the cv. It is in agreement with CentralValueAndUncertainties
     const int cv_id = -1;
     std::cout<<"Loading parameters for cv"<<std::endl;
     // cvPars.push_back(cvu->getCVPars());
     univPars.push_back(cvu->calculateParsForUniverse(cv_id));
-    cv_rw = new ReweightDriver(cv_id,cvPars,univPars[Nuniverses],fileOptions); 
+    cv_rw = new ReweightDriver(cv_id,cvPars,univPars[Nuniverses],fileOptions);
 
     cv_wgt = 1.0;
 
     std::cout<<"Done configuring universes"<<std::endl;
 
   }
-  
+
   std::vector<double> MakeReweight::GetTotalWeights(){
     return vec_wgts;
   }
@@ -109,7 +109,7 @@ namespace NeutrinoFluxReweight{
   }
   /////
   void MakeReweight::doTheJob(InteractionChainData* icd){
-    
+
     //check if there was any QEL-like interaction
     bool reprocess_qel = false;
     std::vector<bool> qel;
@@ -128,10 +128,10 @@ namespace NeutrinoFluxReweight{
       for(int i = 0; i < icd_qel->interaction_chain.size() - 1; i++) {
         if(qel[i]){
           const double momentum_adjustment = icd_qel->interaction_chain[i].Inc_P/icd_qel->interaction_chain[i+1].Inc_P;
-          icd_qel->interaction_chain[i+1].Inc_P4[0] *= momentum_adjustment; 
-          icd_qel->interaction_chain[i+1].Inc_P4[1] *= momentum_adjustment; 
-          icd_qel->interaction_chain[i+1].Inc_P4[2] *= momentum_adjustment; 
-          
+          icd_qel->interaction_chain[i+1].Inc_P4[0] *= momentum_adjustment;
+          icd_qel->interaction_chain[i+1].Inc_P4[1] *= momentum_adjustment;
+          icd_qel->interaction_chain[i+1].Inc_P4[2] *= momentum_adjustment;
+
           icd_qel->interaction_chain[i+1].Inc_P     = icd_qel->interaction_chain[i].Inc_P;
           icd_qel->interaction_chain[i+1].Inc_P4[3] = icd_qel->interaction_chain[i].Inc_P4[3];
           icd_qel->interaction_chain[i+1].Ecm       = icd_qel->interaction_chain[i].Ecm;
@@ -148,7 +148,7 @@ namespace NeutrinoFluxReweight{
         }
       }
     }
-    
+
     //universe calculation:
     map_rew_wgts.clear();
     for(int ii=0;ii<Nuniverses;ii++){
@@ -156,7 +156,6 @@ namespace NeutrinoFluxReweight{
 
       map_rew_wgts["MIPPNumiPionYields"].push_back(vec_rws[ii]->mipp_pion_wgt);
       map_rew_wgts["MIPPNumiKaonYields"].push_back(vec_rws[ii]->mipp_kaon_wgt);
-      
       map_rew_wgts["TargetAttenuation"].push_back(vec_rws[ii]->att_wgt);
       map_rew_wgts["AbsorptionIC"].push_back(vec_rws[ii]->abs_ic_wgt);
       map_rew_wgts["AbsorptionDPIP"].push_back(vec_rws[ii]->abs_dpip_wgt);
@@ -164,7 +163,7 @@ namespace NeutrinoFluxReweight{
       map_rew_wgts["AbsorptionNucleon"].push_back(vec_rws[ii]->abs_nucleon_wgt);
       map_rew_wgts["AbsorptionOther"].push_back(vec_rws[ii]->abs_other_wgt);
       map_rew_wgts["TotalAbsorption"].push_back(vec_rws[ii]->tot_abs_wgt);
-      
+
       map_rew_wgts["ThinTargetpCPion"].push_back(vec_rws[ii]->pC_pi_wgt);
       map_rew_wgts["ThinTargetpCKaon"].push_back(vec_rws[ii]->pC_k_wgt);
       map_rew_wgts["ThinTargetnCPion"].push_back(vec_rws[ii]->nC_pi_wgt);
@@ -181,9 +180,10 @@ namespace NeutrinoFluxReweight{
       map_rew_wgts["ThinTargetMesonIncident_DaughterKm"].push_back(vec_rws[ii]->meson_inc_daughter_Km_wgt);
       map_rew_wgts["ThinTargetMesonIncident_DaughterK0"].push_back(vec_rws[ii]->meson_inc_daughter_K0_wgt);
       map_rew_wgts["ThinTargetnucleonA"].push_back(vec_rws[ii]->nuA_wgt);
-      map_rew_wgts["ThinTargetnucleonAlFe"].push_back(vec_rws[ii]->nuAlFe_wgt);
+      map_rew_wgts["ThinTargetnucleonADataVol"].push_back(vec_rws[ii]->nuA_dvol_wgt);
+      map_rew_wgts["ThinTargetnucleonAOtherVol"].push_back(vec_rws[ii]->nuA_othervol_wgt);
       map_rew_wgts["Other"].push_back(vec_rws[ii]->other_wgt);
-      
+
       if(reprocess_qel) {
         //reprocess the whole chain with QEL disabled
         double new_weight = vec_rws[ii]->calculateWeight(*icd_qel);
@@ -193,10 +193,10 @@ namespace NeutrinoFluxReweight{
         map_rew_wgts["ThinTargetpCQEL"].push_back(1);
       }
     }
-    
+
     //cv calculation:
     cv_wgt = cv_rw->calculateWeight(*icd);
-    
+
   }
   ////
   std::vector<double> MakeReweight::GetWeights(std::string nameReweighter){
@@ -205,12 +205,12 @@ namespace NeutrinoFluxReweight{
     std::map<std::string,std::vector<double> >::iterator it = map_rew_wgts.begin();
     it = map_rew_wgts.find(nameReweighter);
     if(it!=map_rew_wgts.end())tmp_vec = it->second;
-    
+
     return tmp_vec;
-   
+
   }
   ////
-  double MakeReweight::GetCVWeight(){   
+  double MakeReweight::GetCVWeight(){
     return cv_wgt;
   }
   ///
@@ -218,7 +218,7 @@ namespace NeutrinoFluxReweight{
     return Nuniverses;
   }
   MakeReweight::~MakeReweight(){
-    
+
   }
   ///
   MakeReweight* MakeReweight::getInstance(){
@@ -228,7 +228,12 @@ namespace NeutrinoFluxReweight{
   ////
   void MakeReweight::resetInstance()
    {
-      delete instance; 
-      instance = 0; 
+      delete instance;
+      instance = 0;
    }
+  ////
+  void MakeReweight::setBaseSeed(int val) {
+     base_universe = val;
+     std::cout << "Updated base universe: " << base_universe << std::endl;
+  }
 }

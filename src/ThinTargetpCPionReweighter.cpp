@@ -126,7 +126,6 @@ namespace NeutrinoFluxReweight{
       //std::cout<<"TTPCPI check wgt(<0) "<<iUniv<<" "<<aa.Inc_P<<" "<<aa.xF<<" "<<aa.Pt<<" "<<aa.Prod_pdg<<std::endl;
       return aux_par;
     }
-
     return wgt;
   }
   
