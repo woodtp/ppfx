@@ -50,11 +50,7 @@ void ReweightDriver::ParseOptions()
     read_xml(fileOptions.c_str(), top, 2); // option 2 removes comment strings
     ptree &options = top.get_child("inputs.Settings");
 
-    val = options.get<std::string>("Reweighters");
-    if (val == "MIPPNuMIOn")
-        doMIPPNumi = true;
-    else
-        doMIPPNumi = false;
+    doMIPPNumi = "MIPPNuMIOn" == options.get<std::string>("Reweighters");
 }
 
 double ReweightDriver::calculateWeight(const InteractionChainData &icd)
@@ -109,7 +105,7 @@ double ReweightDriver::calculateWeight(const InteractionChainData &icd)
     mipp_pion_wgt = doMIPPNumi ? reweight_MIPP(MIPP_NUMI_PION_Universe) : 1.0;
 
     //MIPP NuMI Kaons:
-    mipp_kaon_wgt = !has_mipp && doMIPPNumi ? reweight_MIPP(MIPP_NUMI_KAON_Universe) : 1.0;
+    mipp_kaon_wgt = doMIPPNumi && !has_mipp ? reweight_MIPP(MIPP_NUMI_KAON_Universe) : 1.0;
 
     //Thin Target pC->piX:
     pC_pi_wgt = reweight(THINTARGET_PC_PION_Universe);
