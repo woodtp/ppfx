@@ -1,5 +1,6 @@
 
 #include "InteractionData.h"
+#include "PDGParticleCodes.h"
 #include <iostream>
 #include <iomanip>
 
@@ -33,13 +34,13 @@ namespace NeutrinoFluxReweight{
     Betacm  = -1000.;
     Gammacm = -1000.;
 
-    Vol = "NoDefinied";
+    Vol = "NotDefined";
     nucleus = -1;
 
   }
 
-  InteractionData::InteractionData(int genid, double incMom[], int incPdg, double prodMom[], int prodPdg, std::string volname, int nucleus_pdg, std::string procname, double vtx[]){
-
+  InteractionData::InteractionData(const int genid, const double (&incMom)[3], const int incPdg, const double (&prodMom)[3], const int prodPdg, const std::string &volname, const int nucleus_pdg, const std::string &procname, const double (&vtx)[3])
+  {
     particle = TDatabasePDG::Instance();
     // Z direction along the direction of the incident particle
     // Cos between incMom and prodMom:
@@ -50,11 +51,11 @@ namespace NeutrinoFluxReweight{
     InteractionData::Inc_pdg  = incPdg;
     InteractionData::Prod_pdg = prodPdg;
 
-    InteractionData::Inc_P  = std::sqrt(incMom[0]*incMom[0] + incMom[1]*incMom[1] +incMom[2]*incMom[2]);
-    InteractionData::Prod_P = std::sqrt(prodMom[0]*prodMom[0] + prodMom[1]*prodMom[1] +prodMom[2]*prodMom[2]);
+    InteractionData::Inc_P  = std::sqrt(incMom[0]*incMom[0] + incMom[1]*incMom[1] + incMom[2]*incMom[2]);
+    InteractionData::Prod_P = std::sqrt(prodMom[0]*prodMom[0] + prodMom[1]*prodMom[1] + prodMom[2]*prodMom[2]);
 
-    double cos_theta = (incMom[0]*prodMom[0]+incMom[1]*prodMom[1]+incMom[2]*prodMom[2])/(Inc_P*Prod_P);
-    double sin_theta = std::sqrt(1.-pow(cos_theta,2.0));
+    const double cos_theta = (incMom[0]*prodMom[0]+incMom[1]*prodMom[1]+incMom[2]*prodMom[2])/(Inc_P*Prod_P);
+    const double sin_theta = std::sqrt(1.-pow(cos_theta,2.0));
 
     //Theta in rads:
     InteractionData::Theta = std::acos(cos_theta);
@@ -62,18 +63,18 @@ namespace NeutrinoFluxReweight{
     InteractionData::Pt = Prod_P*sin_theta;
     InteractionData::Pz = Prod_P*cos_theta;
 
-    if(Inc_pdg < 1000010020) Inc_Mass = particle->GetParticle(Inc_pdg)->Mass();
-    else if(Inc_pdg == 1000010020) {Inc_Mass = 1.875;}
+    if(Inc_pdg < pdg::D2) Inc_Mass = particle->GetParticle(Inc_pdg)->Mass();
+    else if(Inc_pdg == pdg::D2) { Inc_Mass = 1.875; }
     else {Inc_Mass = 2.809;}
 
-    if(Prod_pdg < 1000010020) Prod_Mass = particle->GetParticle(Prod_pdg)->Mass();
-    else if(Prod_pdg == 1000010020) {Prod_Mass = 1.875;}
-    else {Prod_Mass = 2.809;}
+    if(Prod_pdg < pdg::D2) Prod_Mass = particle->GetParticle(Prod_pdg)->Mass();
+    else if(Prod_pdg == pdg::D2) { Prod_Mass = 1.875; }
+    else { Prod_Mass = 2.809; }
 
     InteractionData::Inc_Mass  = Inc_Mass;
     InteractionData::Prod_Mass = Prod_Mass;
 
-    static const double NUCLEON_MASS = (particle->GetParticle(2112)->Mass() + particle->GetParticle(2212)->Mass())/2.;
+    static const double NUCLEON_MASS = (particle->GetParticle(pdg::P)->Mass() + particle->GetParticle(pdg::N)->Mass())/2.;
     static const double NUCLEON_MASS2 = NUCLEON_MASS*NUCLEON_MASS;
     //Ecm, gamma:
     /**
@@ -81,19 +82,19 @@ namespace NeutrinoFluxReweight{
      * and nucleon (not the nucleus!)
      */
 
-    double inc_E_lab = std::sqrt(Inc_P*Inc_P + pow(Inc_Mass,2));
+    const double inc_E_lab = std::sqrt(Inc_P*Inc_P + pow(Inc_Mass,2));
     InteractionData::Ecm       = std::sqrt(pow(Inc_Mass,2) + NUCLEON_MASS2 + 2.*inc_E_lab*NUCLEON_MASS);
     InteractionData::Betacm    = std::sqrt(pow(inc_E_lab,2)-pow(Inc_Mass,2.0))/(inc_E_lab + NUCLEON_MASS);
     InteractionData::Gammacm   = 1./std::sqrt(1.-pow(Betacm,2.0));
 
     //xF:
-    double prod_E_lab  = std::sqrt(Prod_P*Prod_P + pow(Prod_Mass,2));
-    double PL          = Gammacm*(Pz-Betacm*prod_E_lab);  // PL is measured in CM frame
+    const double prod_E_lab  = std::sqrt(Prod_P*Prod_P + pow(Prod_Mass,2));
+    const double PL          = Gammacm*(Pz-Betacm*prod_E_lab);  // PL is measured in CM frame
     InteractionData::xF  = PL*2./Ecm;
 
     //4 momenta:
-    Inc_P4[3]=inc_E_lab;
-    Prod_P4[3]=prod_E_lab;
+    Inc_P4[3] = inc_E_lab;
+    Prod_P4[3] = prod_E_lab;
     for(int i=0; i<3; i++) {Inc_P4[i]=incMom[i]; Prod_P4[i]=prodMom[i];}
 
 
@@ -106,14 +107,14 @@ namespace NeutrinoFluxReweight{
       InteractionData::nucleus = -1;
     }
     else {
-      InteractionData::nucleus = (nucleus_pdg / 10000) % 1000;
+      InteractionData::nucleus = pdg::GetZ(nucleus_pdg);
     }
 
     //Process:
     InteractionData::Proc = procname;
 
     //Vertex:
-    for(int i=0; i<3; i++) Vtx[i]=vtx[i];
+    for(int i=0; i<3; i++) Vtx[i] = vtx[i];
 
   }
 
