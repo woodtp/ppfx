@@ -20,6 +20,7 @@
 #include "ThinTargetMesonIncidentReweighter.h"
 #include "ThinTargetnucleonAReweighter.h"
 
+#include "InteractionData.h"
 #include "InteractionChainData.h"
 
 namespace NeutrinoFluxReweight{
@@ -83,7 +84,9 @@ namespace NeutrinoFluxReweight{
     /*! nuA    */
     double nuA_wgt;
     double nuA_dvol_wgt;
+    double nuA_dvol_negxF_wgt;
     double nuA_othervol_wgt;
+    double nuA_other_wgt;
 
     /*! Meson incident weights   */
     double meson_inc_wgt;
