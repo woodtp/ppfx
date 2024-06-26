@@ -7,7 +7,7 @@ export MODE="NUMI"
 # set package to be used
 source /cvmfs/icarus.opensciencegrid.org/products/icarus/setup_icarus.sh
 source /cvmfs/sbnd.opensciencegrid.org/products/sbnd/setup
-##ROOT: 
+##ROOT:
 #setup -qe14:prof  -f Linux64bit+3.10-2.17 root v6_08_06g
 
 #BOOST:
@@ -31,5 +31,6 @@ export IFDH_CP_MAXRETRIES=2
 export PPFX_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 echo "setting PPFX_DIR=${PPFX_DIR}"
 
-export LD_LIBRARY_PATH=$PPFX_DIR/lib:$LD_LIBRARY_PATH
-echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+# TW: No longer needed, added dynamic runtime linking to Makefile
+# export LD_LIBRARY_PATH=$PPFX_DIR/lib:$LD_LIBRARY_PATH
+# echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
