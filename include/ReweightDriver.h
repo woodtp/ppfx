@@ -83,13 +83,24 @@ namespace NeutrinoFluxReweight{
 
     /*! nuA    */
     double nuA_wgt;
-    double nuA_dvol_wgt;
-    double nuA_dvol_negxF_wgt;
-    double nuA_othervol_wgt;
+    double nuA_inC_inPS_wgt;
+    double nuA_inC_OOPS_wgt;
+    double nuA_outC_Ascale_wgt;
+    double nuA_outC_OOPS_wgt;
     double nuA_other_wgt;
 
     /*! Meson incident weights   */
     double meson_inc_wgt;
+    double meson_inc_incoming_pip_wgt;
+    double meson_inc_incoming_pim_wgt;
+    double meson_inc_incoming_Kp_wgt;
+    double meson_inc_incoming_Km_wgt;
+    double meson_inc_incoming_K0_wgt;
+    double meson_inc_outgoing_pip_wgt;
+    double meson_inc_outgoing_pim_wgt;
+    double meson_inc_outgoing_Kp_wgt;
+    double meson_inc_outgoing_Km_wgt;
+    double meson_inc_outgoing_K0_wgt;
 
      /*!   Any other hadronic interaction not corrected yet   */
     double other_wgt;
