@@ -21,7 +21,12 @@ PWD = Path(os.getcwd())
 ##################################################
 # Job Defaults
 ##################################################
-N_JOBS = 993  # set this equal to the number of input files
+
+file_list = "filelist_userdataset_g4numi_minervame_me000z200i_2BPOT.txt"
+
+with open(file_list, "r") as f:
+    N_JOBS = len(f.readlines())
+
 # N_JOBS = 495  # set this equal to the number of input files
 INPUT_OPTIONS = "scripts/inputs_default.xml"
 # OPTION = "QuarterWeight"
@@ -71,7 +76,8 @@ IDET = ICARUS_geometrical_center
 
 # name of the dataset
 # DATA_TAG = "Nilay_NuMI_1MW_RHC"
-DATA_TAG = "userdataset_awood_NuMI_g4_10_4_all"
+# DATA_TAG = "userdataset_awood_NuMI_g4_10_4_all"
+DATA_TAG = "userdataset_g4numi_minervame_me000z200i_2BPOT"
 # DATA_TAG = f"userdataset_awood_numi_g4_10_4_RHC"
 
 TARFILE_NAME = "local_install.tar.gz"
@@ -114,11 +120,10 @@ def main():
         "-e IDET={IDET} "
         "-f {TARFILE} "
         "-L {LOGFILE} "
-        "--singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest "
+        "--apptainer-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest "
         "--mail-always "
         "file://{CACHE}/ppfx_job_list.sh".format(
             GRID=(
-                # "--OS=SL7 "
                 "--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC "
                 "--expected-lifetime 7200 "
                 "--role=Analysis "
@@ -138,8 +143,7 @@ def main():
 
     # Ship it
     print("\nSubmitting to grid:\n" + submit_command + "\n")
-    status = subprocess.call(submit_command, shell=True)
-    return status
+    subprocess.run(submit_command, shell=True, check=True)
 
 
 def get_options():
