@@ -75,15 +75,12 @@ IDET = ICARUS_geometrical_center
 # IDET=ICARUS_Zp894_95
 
 # name of the dataset
-# DATA_TAG = "Nilay_NuMI_1MW_RHC"
-# DATA_TAG = "userdataset_awood_NuMI_g4_10_4_all"
 DATA_TAG = "userdataset_g4numi_minervame_me000z200i_2BPOT"
-# DATA_TAG = f"userdataset_awood_numi_g4_10_4_RHC"
 
 TARFILE_NAME = "local_install.tar.gz"
 
 today = datetime.today().strftime("%Y-%m-%d")
-OUTDIR = SCRATCH_AREA / f"{today}_ppfx_{DATA_TAG}"
+OUTDIR = SCRATCH_AREA / f"{today}_ppfx_numi_icarus_2BPOT"
 
 ##################################################
 
@@ -94,11 +91,7 @@ def main():
     cache_folder = CACHE_PNFS_AREA / str(random.randint(10000, 99999))
 
     cache_folder.mkdir(parents=True, exist_ok=False)
-    options.outdir.mkdir(parents=True,exist_ok=False)
-
-    # os.makedirs(cache_folder, exist_ok=False)
-
-    # os.makedirs(options.outdir, exist_ok=False)
+    options.outdir.mkdir(parents=True, exist_ok=False)
 
     print("\nTarring up local area...")
     make_tarfile(TARFILE_NAME, ".")
@@ -112,34 +105,25 @@ def main():
 
     print("\nOutput logfile(s):", logfile)
 
-    submit_command = (
-        "jobsub_submit {GRID} {MEMORY} {DISK} -N {NJOBS} -d PPFX {OUTDIR} "
-        "-G icarus "
-        "-e DATA_TAG={DATA_TAG} "
-        "-e INPUT_OPTIONS={INPUT_OPTIONS} "
-        "-e IDET={IDET} "
-        "-f {TARFILE} "
-        "-L {LOGFILE} "
-        "--apptainer-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest "
-        "--mail-always "
-        "file://{CACHE}/ppfx_job_list.sh".format(
-            GRID=(
-                "--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC "
-                "--expected-lifetime 7200 "
-                "--role=Analysis "
-            ),
-            MEMORY="--memory 4000MB ",
-            DISK="--disk 2GB ",
-            NJOBS=options.n_jobs,
-            OUTDIR=options.outdir,
-            DATA_TAG=DATA_TAG,
-            INPUT_OPTIONS=options.input_options,
-            IDET=IDET,
-            TARFILE=cache_folder / TARFILE_NAME,
-            LOGFILE=logfile,
-            CACHE=cache_folder,
-        )
-    )
+    submit_command = " ".join([
+        "jobsub_submit",
+        "--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC",
+        "--expected-lifetime 7200",
+        "--role=Analysis",
+        "--memory 4000MB",
+        "--disk 2GB",
+        f"-N {options.n_jobs}",
+        f"-d PPFX {options.outdir}",
+        "-G icarus",
+        f"-e DATA_TAG={DATA_TAG}",
+        f"-e INPUT_OPTIONS={INPUT_OPTIONS}",
+        f"-e IDET={IDET}",
+        f"-f {cache_folder / TARFILE_NAME}",
+        f"-L {logfile}",
+        "--apptainer-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        "--generate-email-summary",
+        f"file://{cache_folder}/ppfx_job_list.sh"
+        ])
 
     # Ship it
     print("\nSubmitting to grid:\n" + submit_command + "\n")
@@ -150,8 +134,6 @@ def get_options():
     parser = argparse.ArgumentParser(
         prog="ProcessPPFX_list.py", description="PPFX grid job submitter"
     )
-    # parser = optparse.OptionParser(usage="usage: %prog [options]")
-    # grid_group = optparse.OptionGroup(parser, "Grid Options")
 
     parser.add_argument(
         "--outdir",
@@ -164,19 +146,11 @@ def get_options():
         "--n_jobs", default=N_JOBS, help="Number of g4numi jobs. (default: %(default)s)"
     )
 
-    # beam_group = optparse.OptionGroup(parser, "Beam Options")
-    #
-    # run_group = optparse.OptionGroup(parser, "Run Options")
-
     parser.add_argument(
         "--input_options",
         default=INPUT_OPTIONS,
         help="PPFX input: number of universes, MIPP on/off, etc. (default: %(default)s)",
     )
-
-    # parser.add_option_group(grid_group)
-    # parser.add_option_group(beam_group)
-    # parser.add_option_group(run_group)
 
     options = parser.parse_args()
 
