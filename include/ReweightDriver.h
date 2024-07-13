@@ -22,6 +22,8 @@
 
 #include "InteractionData.h"
 #include "InteractionChainData.h"
+#include "IInteractionReweighting.h"
+#include "IInteractionChainReweighting.h"
 
 namespace NeutrinoFluxReweight{
 
@@ -141,6 +143,30 @@ namespace NeutrinoFluxReweight{
 
     std::string fileOptions;
 
+    bool m_hasMIPP;
+
+    /*!
+     * Get the weight for a given reweighter and interaction chain
+     */
+    double getWeight(IInteractionReweighting* reweighter,
+                     const std::vector<InteractionData>& interaction_chain,
+                     std::vector<bool>& interaction_nodes);
+
+    /*!
+     * Overloads for specific behavior
+     */
+    double getWeight(ThinTargetMesonIncidentReweighter* reweighter,
+                     const std::vector<InteractionData>& interaction_chain,
+                     std::vector<bool>& interaction_nodes);
+    double getWeight(ThinTargetnucleonAReweighter* reweighter,
+                     const std::vector<InteractionData>& interaction_chain,
+                     std::vector<bool>& interaction_nodes);
+
+    double getWeightMIPP(IInteractionChainReweighting* reweighter,
+                         const InteractionChainData& icd,
+                         std::vector<bool>& interaction_nodes);
+    double getWeightAttenuation(IInteractionChainReweighting* reweighter,
+                                const InteractionChainData& icd);
   };
 
 

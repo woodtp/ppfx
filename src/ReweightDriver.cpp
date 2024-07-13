@@ -1,10 +1,10 @@
 #include "ReweightDriver.h"
+#include "PDGParticleCodes.h"
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-#include <iostream>
 
-#include "PDGParticleCodes.h"
+#include <iostream>
 
 namespace NeutrinoFluxReweight {
 
@@ -21,8 +21,7 @@ ReweightDriver::ReweightDriver(int iuniv,
     Configure();
 }
 
-void
-ReweightDriver::Configure()
+void ReweightDriver::Configure()
 {
     // Creating the vector of reweighters:
 
@@ -47,8 +46,7 @@ ReweightDriver::Configure()
     OTHER_Universe = new OtherReweighter(iUniv, cvPars, univPars);
 }
 
-void
-ReweightDriver::ParseOptions()
+void ReweightDriver::ParseOptions()
 {
     // Parsing the file input:
     using boost::property_tree::ptree;
@@ -60,69 +58,91 @@ ReweightDriver::ParseOptions()
     doMIPPNumi = "MIPPNuMIOn" == options.get<std::string>("Reweighters");
 }
 
-double
-ReweightDriver::calculateWeight(const InteractionChainData& icd)
+double ReweightDriver::calculateWeight(const InteractionChainData& icd)
 {
-    // Boolean flags:
+    // Flags to keep track of nodes for which a weight has been calculated
     std::vector<bool> interaction_nodes(icd.interaction_chain.size(), false);
-
-    bool has_mipp = false;
-    auto reweight_MIPP = [&interaction_nodes, &icd, &has_mipp](
-                           IInteractionChainReweighting* const reweighter) -> double {
-        interaction_nodes = reweighter->canReweight(icd);
-        for (auto const& node : interaction_nodes) {
-            if (!node) continue;
-            has_mipp = true;
-            return reweighter->calculateWeight(icd);
-        }
-        return 1.0;
-    };
-
-    auto const& interaction_chain = icd.interaction_chain;
-    auto reweight = [&interaction_nodes,
-                     &interaction_chain](IInteractionReweighting* const reweighter) -> double {
-        double wgt = 1.0;
-        for (auto iNode = interaction_nodes.rbegin(); iNode != interaction_nodes.rend(); ++iNode) {
-            if (*iNode) continue;
-            auto const& aa = interaction_chain[std::distance(interaction_nodes.rbegin(), iNode)];
-            if (!reweighter->canReweight(aa)) continue;
-            wgt *= reweighter->calculateWeight(aa);
-            *iNode = true;
-        }
-        return wgt;
-    };
-
-    auto reweight_att_abs = [&icd](IInteractionChainReweighting* const reweighter) -> double {
-        auto const& nodes = reweighter->canReweight(icd);
-        // we just see for the first position (primary proton)
-        if (nodes.empty() || !nodes[0])
-            return 1.0;
-        return reweighter->calculateWeight(icd);
-    };
 
     /// ----- PROCESS INTERACTION NODES ----- ///
 
     // MIPP NuMI Pions:
-    mipp_pion_wgt = doMIPPNumi ? reweight_MIPP(MIPP_NUMI_PION_Universe) : 1.0;
+    m_hasMIPP = false;
+    mipp_pion_wgt = getWeightMIPP(MIPP_NUMI_PION_Universe, icd, interaction_nodes);
 
     // MIPP NuMI Kaons:
-    mipp_kaon_wgt = doMIPPNumi && !has_mipp ? reweight_MIPP(MIPP_NUMI_KAON_Universe) : 1.0;
+    mipp_kaon_wgt = getWeightMIPP(MIPP_NUMI_KAON_Universe, icd, interaction_nodes);
 
     // Thin Target pC->piX:
-    pC_pi_wgt = reweight(THINTARGET_PC_PION_Universe);
+    pC_pi_wgt = getWeight(THINTARGET_PC_PION_Universe, icd.interaction_chain, interaction_nodes);
 
     // Thin Target pC->KX:
-    pC_k_wgt = reweight(THINTARGET_PC_KAON_Universe);
+    pC_k_wgt = getWeight(THINTARGET_PC_KAON_Universe, icd.interaction_chain, interaction_nodes);
 
     // Thin Target nC->piX:
-    nC_pi_wgt = reweight(THINTARGET_NC_PION_Universe);
+    nC_pi_wgt = getWeight(THINTARGET_NC_PION_Universe, icd.interaction_chain, interaction_nodes);
 
     // Thin Target pC->nucleonX:
-    pC_nu_wgt = reweight(THINTARGET_PC_NUCLEON_Universe);
+    pC_nu_wgt = getWeight(THINTARGET_PC_NUCLEON_Universe, icd.interaction_chain, interaction_nodes);
 
     // Thin Target Meson Incident:
-    // meson_inc_wgt = reweight(THINTARGET_MESON_INCIDENT_Universe);
-    meson_inc_wgt = 1.0;
+    meson_inc_wgt = getWeight(THINTARGET_MESON_INCIDENT_Universe, icd.interaction_chain, interaction_nodes);
+
+    // Thin Target Nucleon Incident not hanldle NA49 or Barton:
+    nuA_wgt = getWeight(THINTARGET_NUCLEON_A_Universe, icd.interaction_chain, interaction_nodes);
+
+    // Any other interaction not handled yet:
+    other_wgt = getWeight(OTHER_Universe, icd.interaction_chain, interaction_nodes);
+
+    // Target attenuation correction:
+    att_wgt = getWeightAttenuation(TARG_ATT_Universe, icd);
+
+    // Absorption correction:
+    // Correction of the pi & K absorption in volumes (Al)
+    abs_ic_wgt = getWeightAttenuation(VOL_ABS_IC_Universe, icd);
+
+    // Correction of the pi & K absorption in volumes (Fe)
+    abs_dpip_wgt = getWeightAttenuation(VOL_ABS_DPIP_Universe, icd);
+
+    // Correction of the pi & K absorption in volumes (He)
+    abs_dvol_wgt = getWeightAttenuation(VOL_ABS_DVOL_Universe, icd);
+
+    // Correction of nucleons on Al, Fe and He.
+    abs_nucleon_wgt = getWeightAttenuation(VOL_ABS_NUCLEON_Universe, icd);
+
+    // Correction of any other particle on Al, Fe and He.
+    abs_other_wgt = getWeightAttenuation(VOL_ABS_OTHER_Universe, icd);
+
+    tot_abs_wgt = abs_ic_wgt * abs_dpip_wgt * abs_dvol_wgt * abs_nucleon_wgt * abs_other_wgt;
+
+    const double tot_wgt = mipp_pion_wgt * mipp_kaon_wgt * pC_pi_wgt * pC_k_wgt * pC_nu_wgt *
+                           meson_inc_wgt * nuA_wgt * other_wgt * att_wgt * tot_abs_wgt;
+
+    if (tot_wgt != tot_wgt) {
+        std::cout << "Alert nan total wgt... check!!!" << std::endl;
+        return 1.0;
+    }
+    return tot_wgt;
+}
+
+double ReweightDriver::getWeight(IInteractionReweighting* reweighter,
+                                 const std::vector<InteractionData>& interaction_chain,
+                                 std::vector<bool>& interaction_nodes)
+{
+    double wgt = 1.0;
+    for (auto iNode = interaction_nodes.rbegin(); iNode != interaction_nodes.rend(); ++iNode) {
+        if (*iNode) continue;
+        const auto& aa = interaction_chain[interaction_nodes.rend() - 1 - iNode];
+        if (!reweighter->canReweight(aa)) continue;
+        wgt *= reweighter->calculateWeight(aa);
+        *iNode = true;
+    }
+    return wgt;
+}
+
+double ReweightDriver::getWeight(ThinTargetMesonIncidentReweighter* reweighter,
+                                 const std::vector<InteractionData>& interaction_chain,
+                                 std::vector<bool>& interaction_nodes)
+{
     meson_inc_incoming_pip_wgt = 1.0;
     meson_inc_incoming_pim_wgt = 1.0;
     meson_inc_incoming_Kp_wgt = 1.0;
@@ -134,14 +154,16 @@ ReweightDriver::calculateWeight(const InteractionChainData& icd)
     meson_inc_outgoing_Km_wgt = 1.0;
     meson_inc_outgoing_K0_wgt = 1.0;
 
+    double wgt = 1.0;
+
     for (auto iNode = interaction_nodes.rbegin(); iNode != interaction_nodes.rend(); ++iNode) {
         if (*iNode) continue;
 
-        auto const& aa = interaction_chain[std::distance(interaction_nodes.rbegin(), iNode)];
+        const auto& aa = interaction_chain[interaction_nodes.rend() - 1 - iNode];
 
-        if (!THINTARGET_MESON_INCIDENT_Universe->canReweight(aa)) continue;
+        if (!reweighter->canReweight(aa)) continue;
 
-        const double rewval = THINTARGET_MESON_INCIDENT_Universe->calculateWeight(aa);
+        const double rewval = reweighter->calculateWeight(aa);
 
         switch (aa.Inc_pdg) {
             case pdg::PIP:
@@ -184,44 +206,53 @@ ReweightDriver::calculateWeight(const InteractionChainData& icd)
                 break;
         }
 
-        meson_inc_wgt *= rewval;
+        wgt *= rewval;
         *iNode = true;
     }
 
-    // Thin Target Nucleon Incident not hanldle NA49 or Barton:
-    //  nuA_wgt = reweight(THINTARGET_NC_PION_Universe);
-    nuA_wgt = 1.0;
+    return wgt;
+}
+
+double ReweightDriver::getWeight(ThinTargetnucleonAReweighter* reweighter,
+                                 const std::vector<InteractionData>& interaction_chain,
+                                 std::vector<bool>& interaction_nodes)
+{
     nuA_inC_inPS_wgt = 1.0;
     nuA_inC_OOPS_wgt = 1.0;
     nuA_outC_Ascale_wgt = 1.0;
     nuA_outC_OOPS_wgt = 1.0;
     nuA_other_wgt = 1.0;
+
+    double wgt = 1.0;
+
     for (auto iNode = interaction_nodes.rbegin(); iNode != interaction_nodes.rend(); ++iNode) {
         if (*iNode) continue;
 
-        auto const& aa = icd.interaction_chain[std::distance(interaction_nodes.rbegin(), iNode)];
+        const auto& aa = interaction_chain[interaction_nodes.rend() - 1 - iNode];
 
-        if (!THINTARGET_NUCLEON_A_Universe->canReweight(aa)) continue;
+        if (!reweighter->canReweight(aa)) continue;
 
-        if (aa.Inc_pdg == aa.Prod_pdg && (aa.xF > 0.95 || (aa.xF < (aa.Pt - 0.5)))) {
+        if (aa.Inc_pdg == aa.Prod_pdg && (aa.xF > 0.95 || (aa.Pt < aa.xF - 0.5))) {
             // if nucleon elastic scatter, skip
             *iNode = true;
             continue;
         }
 
-        double rewval = THINTARGET_NUCLEON_A_Universe->calculateWeight(aa);
+        double rewval = reweighter->calculateWeight(aa);
 
-        const bool is_data_vol = (aa.Vol == "TGT1")
-                              || (aa.Vol == "BudalMoniNodeor")
-                              || (aa.Vol == "Budal_HFVS")
-                              || (aa.Vol == "Budal_VFHS");
+        const bool is_carbon_vol = aa.Vol == "TGT1"
+                                || aa.Vol == "BudalMonitor"
+                                || aa.Vol == "Budal_HFVS"
+                                || aa.Vol == "Budal_VFHS";
 
-        const bool is_oops = (aa.xF < 0.0) || (aa.Pt > 2.0) || (aa.Inc_P < 12.0);
+        const bool is_oops = aa.xF < 0.0
+                          || aa.Pt > 2.0
+                          || aa.Inc_P < 12.0;
 
-        if (THINTARGET_NUCLEON_A_Universe->isDataBased(aa)) {
-            nuA_outC_Ascale_wgt *= rewval; // Interactions everywhere else
+        if (reweighter->isDataBased(aa)) {
+            nuA_outC_Ascale_wgt *= rewval;
         }
-        else if (is_data_vol) {
+        else if (is_carbon_vol) {
             if (aa.xF < 0.0 && aa.xF >= -0.25 && aa.Pt <= 2.0 && aa.Inc_P >= 12.0) {
                 // const double inc_mom[3] = { aa.Inc_P4[0], aa.Inc_P4[1], aa.Inc_P4[2] };
                 // const double prod_mom[3] = { aa.Prod_P4[0], aa.Prod_P4[1], aa.Prod_P4[2] };
@@ -268,15 +299,7 @@ ReweightDriver::calculateWeight(const InteractionChainData& icd)
                 nuA_inC_OOPS_wgt *= rewval;
             }
             else {
-                // Contributions from eiNodeher neutron elastic scatters or exotic productions (e.g., 2212 +A -> -2112 + X)
-                // std::cout
-                //     << aa.Inc_pdg << " "
-                //     << aa.Prod_pdg << " "
-                //     << aa.Vol << " "
-                //     << aa.Inc_P << " "
-                //     << aa.xF << " "
-                //     << aa.Pt
-                //     << std::endl;
+                // Contributions from exotic processes (e.g., 2212 + C -> -2112 + X)
                 nuA_other_wgt *= rewval;
             }
         }
@@ -284,44 +307,35 @@ ReweightDriver::calculateWeight(const InteractionChainData& icd)
             nuA_outC_OOPS_wgt *= rewval; // Interactions everywhere else
         }
 
-        nuA_wgt *= rewval;
+        wgt *= rewval;
         *iNode = true;
     }
 
-    // Any other interaction not handled yet:
-    other_wgt = reweight(OTHER_Universe);
+    return wgt;
+}
 
-    // Target attenuation correction:
-    att_wgt = reweight_att_abs(TARG_ATT_Universe);
+double ReweightDriver::getWeightMIPP(IInteractionChainReweighting* reweighter,
+                                     const InteractionChainData& icd,
+                                     std::vector<bool>& interaction_nodes)
+{
+    if (!doMIPPNumi || m_hasMIPP) return 1.0;
 
-    // Absorption correction:
-    tot_abs_wgt = 1.0;
-
-    // Correction of the pi & K absorption in volumes (Al)
-    abs_ic_wgt = reweight_att_abs(VOL_ABS_IC_Universe);
-
-    // Correction of the pi & K absorption in volumes (Fe)
-    abs_dpip_wgt = reweight_att_abs(VOL_ABS_DPIP_Universe);
-
-    // Correction of the pi & K absorption in volumes (He)
-    abs_dvol_wgt = reweight_att_abs(VOL_ABS_DVOL_Universe);
-
-    // Correction of nucleons on Al, Fe and He.
-    abs_nucleon_wgt = reweight_att_abs(VOL_ABS_NUCLEON_Universe);
-
-    // Correction of any other particle on Al, Fe and He.
-    abs_other_wgt = reweight_att_abs(VOL_ABS_OTHER_Universe);
-
-    tot_abs_wgt *= abs_ic_wgt * abs_dpip_wgt * abs_dvol_wgt * abs_nucleon_wgt * abs_other_wgt;
-
-    const double tot_wgt = mipp_pion_wgt * mipp_kaon_wgt * pC_pi_wgt * pC_k_wgt * pC_nu_wgt *
-                           meson_inc_wgt * nuA_wgt * other_wgt * att_wgt * tot_abs_wgt;
-
-    if (tot_wgt != tot_wgt) {
-        std::cout << "Alert nan total wgt... check!!!" << std::endl;
-        return 1.0;
+    interaction_nodes = reweighter->canReweight(icd);
+    for (const auto& node : interaction_nodes) {
+        if (!node) continue;
+        m_hasMIPP = true;
+        return reweighter->calculateWeight(icd);
     }
-    return tot_wgt;
+    return 1.0;
+}
+
+double ReweightDriver::getWeightAttenuation(IInteractionChainReweighting* reweighter,
+                                            const InteractionChainData& icd)
+{
+    const auto& nodes = reweighter->canReweight(icd);
+    // we just see for the first position (primary proton)
+    if (nodes.empty() || !nodes[0]) return 1.0;
+    return reweighter->calculateWeight(icd);
 }
 
 ReweightDriver::~ReweightDriver()
