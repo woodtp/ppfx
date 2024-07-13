@@ -3,9 +3,11 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include "PDGParticleCodes.h"
-
 #define NOQEL
+
+#ifndef NOQEL
+#include "PDGParticleCodes.h"
+#endif
 
 namespace NeutrinoFluxReweight {
 
