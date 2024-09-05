@@ -14,15 +14,20 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 
-SCRATCH_AREA = Path(f"/pnfs/icarus/scratch/users/{os.getenv('USER')}")
-CACHE_PNFS_AREA = SCRATCH_AREA / "grid_cache/"
+experiment = subprocess.run(["id", "-ng"], capture_output=True, text=True).stdout.strip()
+SCRATCH_AREA = Path(f"/pnfs/{experiment}/scratch/users/{os.environ['USER']}")
+DATA_AREA = Path(f"/exp/{experiment}/data/users/{os.environ['USER']}")
+# CACHE_AREA = SCRATCH_AREA / "grid_cache/"
+CACHE_AREA = DATA_AREA / "grid_cache"
 PWD = Path(os.getcwd())
 
 ##################################################
 # Job Defaults
 ##################################################
 
-file_list = "filelist_userdataset_g4numi_minervame_me000z200i_2BPOT.txt"
+# file_list = "filelist_userdataset_g4numi_minervame_me000z200i_2BPOT.txt"
+# file_list = "./filelist_rhc_karim.txt"
+file_list = "./filelist_g4numi_g4_10_4_p02d_nothresh.txt"
 
 with open(file_list, "r") as f:
     N_JOBS = len(f.readlines())
@@ -75,12 +80,13 @@ IDET = ICARUS_geometrical_center
 # IDET=ICARUS_Zp894_95
 
 # name of the dataset
-DATA_TAG = "userdataset_g4numi_minervame_me000z200i_2BPOT"
+# DATA_TAG = "rhc_karim"
+DATA_TAG = "g4numi_g4_10_4_p02d_nothresh"
 
 TARFILE_NAME = "local_install.tar.gz"
 
 today = datetime.today().strftime("%Y-%m-%d")
-OUTDIR = SCRATCH_AREA / f"{today}_ppfx_numi_icarus_2BPOT"
+OUTDIR = SCRATCH_AREA / f"{today}_{DATA_TAG}_{IDET}_reintroduce_bug"
 
 ##################################################
 
@@ -88,7 +94,7 @@ OUTDIR = SCRATCH_AREA / f"{today}_ppfx_numi_icarus_2BPOT"
 def main():
     options = get_options()
 
-    cache_folder = CACHE_PNFS_AREA / str(random.randint(10000, 99999))
+    cache_folder = CACHE_AREA / str(random.randint(10000, 99999))
 
     cache_folder.mkdir(parents=True, exist_ok=False)
     options.outdir.mkdir(parents=True, exist_ok=False)
@@ -118,7 +124,7 @@ def main():
         f"-e DATA_TAG={DATA_TAG}",
         f"-e INPUT_OPTIONS={INPUT_OPTIONS}",
         f"-e IDET={IDET}",
-        f"-f {cache_folder / TARFILE_NAME}",
+        f"--tar_file_name dropbox://{cache_folder / TARFILE_NAME}",
         f"-L {logfile}",
         "--apptainer-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
         "--generate-email-summary",
