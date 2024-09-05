@@ -6,7 +6,7 @@ LDFLAGS= '-Wl,-rpath,$$ORIGIN/../lib' -L./lib
 LDLIBS = -lppfx -L${DK2NU}/lib -ldk2nuTree
 
 CC = g++
-CFLAGS = -fPIC -DLINUX -O2 -g $(shell root-config --cflags) -Wall -Wextra -pedantic
+CFLAGS = -fPIC -DLINUX -O3 -g $(shell root-config --cflags) -Wall -Wextra -pedantic
 
 all:    lib programs doxy
 
