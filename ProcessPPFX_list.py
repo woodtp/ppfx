@@ -25,9 +25,9 @@ PWD = Path(os.getcwd())
 # Job Defaults
 ##################################################
 
-# file_list = "filelist_userdataset_g4numi_minervame_me000z200i_2BPOT.txt"
-# file_list = "./filelist_rhc_karim.txt"
-file_list = "./filelist_g4numi_g4_10_4_p02d_nothresh.txt"
+DATA_TAG = "g4numi_1B_POT"
+
+file_list = f"./filelist_{DATA_TAG}.txt"
 
 with open(file_list, "r") as f:
     N_JOBS = len(f.readlines())
@@ -79,14 +79,10 @@ IDET = ICARUS_geometrical_center
 # IDET=ICARUS_Zm894_95
 # IDET=ICARUS_Zp894_95
 
-# name of the dataset
-# DATA_TAG = "rhc_karim"
-DATA_TAG = "g4numi_g4_10_4_p02d_nothresh"
-
 TARFILE_NAME = "local_install.tar.gz"
 
 today = datetime.today().strftime("%Y-%m-%d")
-OUTDIR = SCRATCH_AREA / f"{today}_{DATA_TAG}_{IDET}_reintroduce_bug"
+OUTDIR = SCRATCH_AREA / f"{today}_{DATA_TAG}_{IDET}_2"
 
 ##################################################
 
@@ -97,7 +93,14 @@ def main():
     cache_folder = CACHE_AREA / str(random.randint(10000, 99999))
 
     cache_folder.mkdir(parents=True, exist_ok=False)
-    options.outdir.mkdir(parents=True, exist_ok=False)
+
+    logdir = options.outdir / "logs"
+    filedir = options.outdir / "files"
+
+    logdir.mkdir(parents=True, exist_ok=False)
+    filedir.mkdir(parents=True, exist_ok=False)
+
+    print(f"PPFX job files will be stored in {filedir}")
 
     print("\nTarring up local area...")
     make_tarfile(TARFILE_NAME, ".")
@@ -107,7 +110,7 @@ def main():
 
     print("\nTarball of local area:", cache_folder / TARFILE_NAME)
 
-    logfile = options.outdir / f"ppfx_{DATA_TAG}_$PROCESS.log"
+    logfile = logdir / f"ppfx_{DATA_TAG}_\\$PROCESS.log"
 
     print("\nOutput logfile(s):", logfile)
 
@@ -119,7 +122,7 @@ def main():
         "--memory 4000MB",
         "--disk 2GB",
         f"-N {options.n_jobs}",
-        f"-d PPFX {options.outdir}",
+        f"-d PPFX {filedir}",
         "-G icarus",
         f"-e DATA_TAG={DATA_TAG}",
         f"-e INPUT_OPTIONS={INPUT_OPTIONS}",
