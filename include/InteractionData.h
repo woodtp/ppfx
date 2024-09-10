@@ -29,6 +29,8 @@ namespace NeutrinoFluxReweight{
 
     virtual ~InteractionData();
 
+    friend std::ostream& operator<<(std::ostream& os, const InteractionData& id);
+
     //! generation index
     int gen;
 

@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#define NUA_XF_MIRRORING
+// #define NUA_XF_MIRRORING
 
 namespace NeutrinoFluxReweight {
 
@@ -59,6 +59,43 @@ void ReweightDriver::ParseOptions()
 
     doMIPPNumi = "MIPPNuMIOn" == options.get<std::string>("Reweighters");
 }
+
+double ReweightDriver::checkWeight(double wgt, const std::vector<InteractionData>& interaction_chain)
+{
+    auto dumpNodes = [&interaction_chain]() {
+        int i = 0;
+        for(const auto& aa : interaction_chain) {
+            std::cout << " ======== INTERACTION NODE [" << i << "] ========\n" << aa;
+            i++;
+        }
+        std::cout << " ======================================\n\n";
+    };
+
+    if (wgt > 20.0) {
+        if (wgt > 100.0) {
+            std::cout << "\n[WARNING] wgt > 100.0 (wgt = " << wgt << "). Setting weight to 0 and skipping this entry.\n";
+            dumpNodes();
+
+            mipp_pion_wgt = 0.0;
+            mipp_kaon_wgt = 0.0;
+            pC_pi_wgt = 0.0;
+            pC_k_wgt = 0.0;
+            nC_pi_wgt = 0.0;
+            pC_nu_wgt = 0.0;
+            meson_inc_wgt = 0.0;
+            nuA_wgt = 0.0;
+            other_wgt = 0.0;
+            att_wgt = 0.0;
+            tot_abs_wgt = 0.0;
+
+            return 0.0;
+        }
+        std::cout << "\n[WARNING] wgt > 20.0 (wgt = " << wgt << ").\n";
+        dumpNodes();
+    }
+    return wgt;
+}
+
 
 double ReweightDriver::calculateWeight(const InteractionChainData& icd)
 {
@@ -123,7 +160,7 @@ double ReweightDriver::calculateWeight(const InteractionChainData& icd)
         std::cout << "Alert nan total wgt... check!!!" << std::endl;
         return 1.0;
     }
-    return tot_wgt;
+    return checkWeight(tot_wgt, icd.interaction_chain);
 }
 
 double ReweightDriver::getWeight(IInteractionReweighting* reweighter,
@@ -138,7 +175,7 @@ double ReweightDriver::getWeight(IInteractionReweighting* reweighter,
         wgt *= reweighter->calculateWeight(aa);
         *iNode = true;
     }
-    return wgt;
+    return checkWeight(wgt, interaction_chain);
 }
 
 double ReweightDriver::getWeight(ThinTargetMesonIncidentReweighter* reweighter,
@@ -212,7 +249,7 @@ double ReweightDriver::getWeight(ThinTargetMesonIncidentReweighter* reweighter,
         *iNode = true;
     }
 
-    return wgt;
+    return checkWeight(wgt, interaction_chain);
 }
 
 double ReweightDriver::getWeight(ThinTargetnucleonAReweighter* reweighter,
@@ -235,7 +272,7 @@ double ReweightDriver::getWeight(ThinTargetnucleonAReweighter* reweighter,
         if (!reweighter->canReweight(aa)) continue;
 
         if (aa.Inc_pdg == aa.Prod_pdg && (aa.xF > 0.95 || (aa.Pt < aa.xF - 0.5))) {
-            // if nucleon elastic scatter, skip
+            // if QEL-like, skip
             *iNode = true;
             continue;
         }
@@ -296,7 +333,6 @@ double ReweightDriver::getWeight(ThinTargetnucleonAReweighter* reweighter,
                     rewval = THINTARGET_NUCLEON_A_Universe->calculateWeight(aa_tmp);
                 }
 #endif
-
                 nuA_inC_inPS_wgt *= rewval;
             }
             else if (is_oops) {
@@ -315,7 +351,7 @@ double ReweightDriver::getWeight(ThinTargetnucleonAReweighter* reweighter,
         *iNode = true;
     }
 
-    return wgt;
+    return checkWeight(wgt, interaction_chain);
 }
 
 double ReweightDriver::getWeightMIPP(IInteractionChainReweighting* reweighter,
@@ -328,7 +364,7 @@ double ReweightDriver::getWeightMIPP(IInteractionChainReweighting* reweighter,
     for (const auto& node : interaction_nodes) {
         if (!node) continue;
         m_hasMIPP = true;
-        return reweighter->calculateWeight(icd);
+        return checkWeight(reweighter->calculateWeight(icd), icd.interaction_chain);
     }
     return 1.0;
 }
@@ -339,7 +375,7 @@ double ReweightDriver::getWeightAttenuation(IInteractionChainReweighting* reweig
     const auto& nodes = reweighter->canReweight(icd);
     // we just see for the first position (primary proton)
     if (nodes.empty() || !nodes[0]) return 1.0;
-    return reweighter->calculateWeight(icd);
+    return checkWeight(reweighter->calculateWeight(icd), icd.interaction_chain);
 }
 
 ReweightDriver::~ReweightDriver()

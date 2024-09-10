@@ -145,6 +145,7 @@ namespace NeutrinoFluxReweight{
 
     bool m_hasMIPP;
 
+    double checkWeight(double wgt, const std::vector<InteractionData>& interaction_chain);
     /*!
      * Get the weight for a given reweighter and interaction chain
      */
