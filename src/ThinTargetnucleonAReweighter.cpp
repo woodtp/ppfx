@@ -255,7 +255,7 @@ double ThinTargetnucleonAReweighter::calculateWeight(const InteractionData& aa)
         // add extra uncertainties for xF < 0
         // treatment here is basically 40% corr. across hadron species + 40% uncorr. across all
         // species, xF bins
-        const double negxF_corrunc = aa.xF < 0.0 ? bin_prtleftover_inc : 1.0;
+        const double negxF_corrunc =  1.0; // aa.xF < 0.0 ? bin_prtleftover_inc : 1.0;
 
         if (pdg::PIP == aa.Prod_pdg)
             wgt = vbin_prt_inc_pip[binnu] * negxF_corrunc;
