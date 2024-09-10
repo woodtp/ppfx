@@ -2,35 +2,22 @@
 #include "NuWeight.h"
 #include "PDGParticleCodes.h"
 
-#include "TH1D.h"
 #include "dk2nu/tree/dk2nu.h"
 #include "dk2nu/tree/dkmeta.h"
+
+#include "TH1.h"
+// #include "TH2.h"
 
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 
-
-// PDG codes
-#define PI0 111
-#define PIP 211
-#define PIM -211
-#define K0L 130
-#define K0S 310
-#define KP 321
-#define KM -321
-#define MUP -13
-#define MUM 13
-
-// const bool USE_NUCLEUS = true;
-
-// Some constants::
-
+// Some constants:
 static constexpr int NbinsE = 200;
 static constexpr double emin = 0.;
 static constexpr double emax = 20.;
-static constexpr int Nnuhel = 4;
+static constexpr std::size_t Nnuhel = 4;
 static const char* nuhel[Nnuhel] = {"numu", "numubar", "nue", "nuebar"};
 static const char* nulabel[Nnuhel] = {"#nu_{#mu}", "#bar#nu_{#mu}", "#nu_{e}", "#bar#nu_{e}"};
 static constexpr int Nparent = 5;
@@ -39,10 +26,7 @@ static const char* parent_label[Nparent] = {"", "#pi^{#pm}", "K^{#pm}", "K^{0}_{
 
 using namespace NeutrinoFluxReweight;
 
-class nu_g4numi;
-class Numi2Pdg;
-
-int idx_hel(int pdgdcode);
+std::size_t idx_hel(int pdgdcode);
 
 /*!
  * Run the reweighting for a single file (inputFile) for
@@ -52,22 +36,13 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
                       const char* cxxdet, const char* cyydet, const char* czzdet) {
     TH1::SetDefaultSumw2();
 
-    // const char* thisDir = getenv("PPFX_DIR");
-    int idet = -1;
-    // bool doing_precalculated_pos = false;
+    std::size_t idet;
 
-    // NeutrinoFluxAuxiliar::NuWeight* nuweight;
-    const bool doing_precalculated_pos =
-        std::string(cyydet) == "none" && std::string(czzdet) == "none";
+    const bool doing_precalculated_pos = std::string(cyydet) == "none" && std::string(czzdet) == "none";
+
     if (doing_precalculated_pos) {
-        idet = atoi(cxxdet);
+        idet = static_cast<std::size_t>(atoi(cxxdet));
     }
-    // else{
-    //   std::vector<double> vdet;
-    //   double xxdet = atof(cxxdet); vdet.push_back(xxdet);
-    //   double yydet = atof(cyydet); vdet.push_back(yydet);
-    //   double zzdet = atof(czzdet); vdet.push_back(zzdet);
-    // }
 
     std::cout << "Instance of MakeReweight()" << std::endl;
     MakeReweight* makerew = MakeReweight::getInstance();
@@ -77,7 +52,7 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
     TFile fOut(outputFile, "recreate");
     std::cout << "File name: " << fOut.GetName() << std::endl;
 
-    const int Nuniverses = makerew->GetNumberOfUniversesUsed();
+    const std::size_t Nuniverses = static_cast<std::size_t>(makerew->GetNumberOfUniversesUsed());
 
     std::vector<std::vector<TH1D>> hnom(Nnuhel, std::vector<TH1D>(Nparent));
     std::vector<TH1D> hcv(Nnuhel);
@@ -108,6 +83,11 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
     std::vector<std::vector<TH1D>> hthin_nua_outC_OOPS(Nnuhel, std::vector<TH1D>(Nuniverses));
     std::vector<std::vector<TH1D>> hthin_nua_other(Nnuhel, std::vector<TH1D>(Nuniverses));
 
+    // TH1D hthin_pCk_weight_numu("hthin_pCk_weight_numu", "hthin_pCk_weight_numu", 10000, 0, 100);
+    // TH1D hthin_pCk_weight_numu_weighted("hthin_pCk_weight_numu_weighted", "hthin_pCk_weight_numu", 10000, 0, 100);
+    // TH2D hthin_pCK_weight_nuenergy_numu("hthin_pCK_weight_nuenergy_numu", "hthin_pCK_weight_nuenergy_numu", 10000, 0, 100, NbinsE, emin, emax);
+    // TH2D hthin_pCK_weight_nuenergy_numu_weighted("hthin_pCK_weight_nuenergy_numu_weighted", "hthin_pCK_weight_nuenergy_numu_weighted", 10000, 0, 100, NbinsE, emin, emax);
+    //
 
     auto initHist = [&](const char* name, const char* title) {
         const char* xtitle = "E_{#nu} [GeV]";
@@ -115,9 +95,9 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
         return TH1D(name, Form("%s;%s;%s", title, xtitle, ytitle), NbinsE, emin, emax);
     };
 
-    for (int ii = 0; ii < Nnuhel; ii++) {
+    for (std::size_t ii = 0; ii < Nnuhel; ii++) {
         // auto const& nu = nulabel[ii];
-        for (int kk = 0; kk < Nparent; kk++) {
+        for (std::size_t kk = 0; kk < Nparent; kk++) {
             if (kk == 0)
                 hnom[ii][kk] = initHist(Form("hnom_%s", nuhel[ii]),
                                         Form("Uncorrected %s flux", nulabel[ii]));
@@ -129,62 +109,62 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
         hcv[ii] = initHist(Form("hcv_%s", nuhel[ii]),
                            Form("Fully PPFX-corrected %s flux (central value)", nulabel[ii]));
 
-        for (int jj = 0; jj < Nuniverses; jj++) {
-            hthin[ii][jj]        = initHist(Form("hthin_%s_%d", nuhel[ii], jj),
-                                            Form("%s flux corrected based on thin target data, univ. #%i", nulabel[ii], jj));
-            hmipp[ii][jj]        = initHist(Form("hmipp_%s_%d", nuhel[ii], jj),
-                                            Form("%s flux corrected based on MIPP NuMI target data, univ. #%i", nulabel[ii], jj));
-            hatt[ii][jj]         = initHist(Form("hatt_%s_%d", nuhel[ii], jj),
-                                            Form("%s flux corrected for attenuation in target, univ. #%i", nulabel[ii], jj));
-            hothers[ii][jj]      = initHist(Form("hothers_%s_%d", nuhel[ii], jj),
-                                            Form("%s flux corrected for other effects, univ. #%i", nulabel[ii], jj));
-            htotal[ii][jj]       = initHist(Form("htotal_%s_%d", nuhel[ii], jj),
-                                            Form("%s flux corrected for all effects, univ. #%i", nulabel[ii], jj));
-            hthin_pCpi[ii][jj]   = initHist(Form("hthin_pCpi_%s_%d", nuhel[ii], jj),
-                                            Form("%s flux corrected based on thin target p+C#rightarrow#pi+X data, univ. #%i", nulabel[ii], jj));
-            hthin_pCk[ii][jj]    = initHist(Form("hthin_pCk_%s_%d", nuhel[ii], jj),
-                                            Form("%s flux corrected based on thin target p+C#rightarrowK+X data, univ. #%i", nulabel[ii], jj));
-            hthin_nCpi[ii][jj]   = initHist(Form("hthin_nCpi_%s_%d", nuhel[ii], jj),
-                                            Form("%s flux corrected based on thin target n+C#rightarrow#pi+X data, univ. #%i", nulabel[ii], jj));
-            hthin_pCnu[ii][jj]   = initHist(Form("hthin_pCnu_%s_%d", nuhel[ii], jj),
-                                            Form("%s flux corrected based on thin target p+C#rightarrowN+X data, univ. #%i", nulabel[ii], jj));
-            hthin_mesinc[ii][jj] = initHist(Form("hthin_mesinc_%s_%d", nuhel[ii], jj),
-                                            Form("%s flux corrected based on thin target data on meson interaction, univ. #%i", nulabel[ii], jj));
+        for (std::size_t jj = 0; jj < Nuniverses; jj++) {
+            hthin[ii][jj]        = initHist(Form("hthin_%s_%zu", nuhel[ii], jj),
+                                            Form("%s flux corrected based on thin target data, univ. #%zu", nulabel[ii], jj));
+            hmipp[ii][jj]        = initHist(Form("hmipp_%s_%zu", nuhel[ii], jj),
+                                            Form("%s flux corrected based on MIPP NuMI target data, univ. #%zu", nulabel[ii], jj));
+            hatt[ii][jj]         = initHist(Form("hatt_%s_%zu", nuhel[ii], jj),
+                                            Form("%s flux corrected for attenuation in target, univ. #%zu", nulabel[ii], jj));
+            hothers[ii][jj]      = initHist(Form("hothers_%s_%zu", nuhel[ii], jj),
+                                            Form("%s flux corrected for other effects, univ. #%zu", nulabel[ii], jj));
+            htotal[ii][jj]       = initHist(Form("htotal_%s_%zu", nuhel[ii], jj),
+                                            Form("%s flux corrected for all effects, univ. #%zu", nulabel[ii], jj));
+            hthin_pCpi[ii][jj]   = initHist(Form("hthin_pCpi_%s_%zu", nuhel[ii], jj),
+                                            Form("%s flux corrected based on thin target p+C#rightarrow#pi+X data, univ. #%zu", nulabel[ii], jj));
+            hthin_pCk[ii][jj]    = initHist(Form("hthin_pCk_%s_%zu", nuhel[ii], jj),
+                                            Form("%s flux corrected based on thin target p+C#rightarrowK+X data, univ. #%zu", nulabel[ii], jj));
+            hthin_nCpi[ii][jj]   = initHist(Form("hthin_nCpi_%s_%zu", nuhel[ii], jj),
+                                            Form("%s flux corrected based on thin target n+C#rightarrow#pi+X data, univ. #%zu", nulabel[ii], jj));
+            hthin_pCnu[ii][jj]   = initHist(Form("hthin_pCnu_%s_%zu", nuhel[ii], jj),
+                                            Form("%s flux corrected based on thin target p+C#rightarrowN+X data, univ. #%zu", nulabel[ii], jj));
+            hthin_mesinc[ii][jj] = initHist(Form("hthin_mesinc_%s_%zu", nuhel[ii], jj),
+                                            Form("%s flux corrected based on thin target data on meson interaction, univ. #%zu", nulabel[ii], jj));
 
-            hthin_mesinc_incoming_pip[ii][jj] = initHist(Form("hthin_mesinc_incoming_pip_%s_%d", nuhel[ii], jj),
-                                                         Form("%s flux corrected based on sadly nonexistent thin target data on #pi^{+} interaction, univ. #%i", nulabel[ii], jj));
-            hthin_mesinc_incoming_pim[ii][jj] = initHist(Form("hthin_mesinc_incoming_pim_%s_%d", nuhel[ii], jj),
-                                                         Form("%s flux corrected based on sadly nonexistent thin target data on #pi^{-} interaction, univ. #%i", nulabel[ii], jj));
-            hthin_mesinc_incoming_Kp[ii][jj]  = initHist(Form("hthin_mesinc_incoming_Kp_%s_%d", nuhel[ii], jj),
-                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{+} interaction, univ. #%i", nulabel[ii], jj));
-            hthin_mesinc_incoming_Km[ii][jj]  = initHist(Form("hthin_mesinc_incoming_Km_%s_%d", nuhel[ii], jj),
-                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{-} interaction, univ. #%i", nulabel[ii], jj));
-            hthin_mesinc_incoming_K0[ii][jj]  = initHist(Form("hthin_mesinc_incoming_K0_%s_%d", nuhel[ii], jj),
-                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{0} interaction, univ. #%i", nulabel[ii], jj));
+            hthin_mesinc_incoming_pip[ii][jj] = initHist(Form("hthin_mesinc_incoming_pip_%s_%zu", nuhel[ii], jj),
+                                                         Form("%s flux corrected based on sadly nonexistent thin target data on #pi^{+} interaction, univ. #%zu", nulabel[ii], jj));
+            hthin_mesinc_incoming_pim[ii][jj] = initHist(Form("hthin_mesinc_incoming_pim_%s_%zu", nuhel[ii], jj),
+                                                         Form("%s flux corrected based on sadly nonexistent thin target data on #pi^{-} interaction, univ. #%zu", nulabel[ii], jj));
+            hthin_mesinc_incoming_Kp[ii][jj]  = initHist(Form("hthin_mesinc_incoming_Kp_%s_%zu", nuhel[ii], jj),
+                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{+} interaction, univ. #%zu", nulabel[ii], jj));
+            hthin_mesinc_incoming_Km[ii][jj]  = initHist(Form("hthin_mesinc_incoming_Km_%s_%zu", nuhel[ii], jj),
+                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{-} interaction, univ. #%zu", nulabel[ii], jj));
+            hthin_mesinc_incoming_K0[ii][jj]  = initHist(Form("hthin_mesinc_incoming_K0_%s_%zu", nuhel[ii], jj),
+                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{0} interaction, univ. #%zu", nulabel[ii], jj));
 
-            hthin_mesinc_outgoing_pip[ii][jj] = initHist(Form("hthin_mesinc_outgoing_pip_%s_%d", nuhel[ii], jj),
-                                                         Form("%s flux corrected based on sadly nonexistent thin target data on #pi^{+} interaction, univ. #%i", nulabel[ii], jj));
-            hthin_mesinc_outgoing_pim[ii][jj] = initHist(Form("hthin_mesinc_outgoing_pim_%s_%d", nuhel[ii], jj),
-                                                         Form("%s flux corrected based on sadly nonexistent thin target data on #pi^{-} interaction, univ. #%i", nulabel[ii], jj));
-            hthin_mesinc_outgoing_Kp[ii][jj]  = initHist(Form("hthin_mesinc_outgoing_Kp_%s_%d", nuhel[ii], jj),
-                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{+} interaction, univ. #%i", nulabel[ii], jj));
-            hthin_mesinc_outgoing_Km[ii][jj]  = initHist(Form("hthin_mesinc_outgoing_Km_%s_%d", nuhel[ii], jj),
-                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{-} interaction, univ. #%i", nulabel[ii], jj));
-            hthin_mesinc_outgoing_K0[ii][jj]  = initHist(Form("hthin_mesinc_outgoing_K0_%s_%d", nuhel[ii], jj),
-                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{0} interaction, univ. #%i", nulabel[ii], jj));
+            hthin_mesinc_outgoing_pip[ii][jj] = initHist(Form("hthin_mesinc_outgoing_pip_%s_%zu", nuhel[ii], jj),
+                                                         Form("%s flux corrected based on sadly nonexistent thin target data on #pi^{+} interaction, univ. #%zu", nulabel[ii], jj));
+            hthin_mesinc_outgoing_pim[ii][jj] = initHist(Form("hthin_mesinc_outgoing_pim_%s_%zu", nuhel[ii], jj),
+                                                         Form("%s flux corrected based on sadly nonexistent thin target data on #pi^{-} interaction, univ. #%zu", nulabel[ii], jj));
+            hthin_mesinc_outgoing_Kp[ii][jj]  = initHist(Form("hthin_mesinc_outgoing_Kp_%s_%zu", nuhel[ii], jj),
+                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{+} interaction, univ. #%zu", nulabel[ii], jj));
+            hthin_mesinc_outgoing_Km[ii][jj]  = initHist(Form("hthin_mesinc_outgoing_Km_%s_%zu", nuhel[ii], jj),
+                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{-} interaction, univ. #%zu", nulabel[ii], jj));
+            hthin_mesinc_outgoing_K0[ii][jj]  = initHist(Form("hthin_mesinc_outgoing_K0_%s_%zu", nuhel[ii], jj),
+                                                         Form("%s flux corrected based on sadly nonexistent thin target data on K^{0} interaction, univ. #%zu", nulabel[ii], jj));
 
-            hthin_nua[ii][jj]             = initHist(Form("hthin_nua_%s_%d", nuhel[ii], jj),
-                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%i", nulabel[ii], jj));
-            hthin_nua_inC_inPS[ii][jj]    = initHist(Form("hthin_nua_inC_inPS_%s_%d", nuhel[ii], jj),
-                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%i", nulabel[ii], jj));
-            hthin_nua_inC_OOPS[ii][jj]    = initHist(Form("hthin_nua_inC_OOPS_%s_%d", nuhel[ii], jj),
-                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%i", nulabel[ii], jj));
-            hthin_nua_outC_Ascale[ii][jj] = initHist(Form("hthin_nua_outC_Ascale_%s_%d", nuhel[ii], jj),
-                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%i", nulabel[ii], jj));
-            hthin_nua_outC_OOPS[ii][jj]   = initHist(Form("hthin_nua_outC_OOPS_%s_%d", nuhel[ii], jj),
-                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%i", nulabel[ii], jj));
-            hthin_nua_other[ii][jj]       = initHist(Form("hthin_nua_other_%s_%d", nuhel[ii], jj),
-                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%i", nulabel[ii], jj));
+            hthin_nua[ii][jj]             = initHist(Form("hthin_nua_%s_%zu", nuhel[ii], jj),
+                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%zu", nulabel[ii], jj));
+            hthin_nua_inC_inPS[ii][jj]    = initHist(Form("hthin_nua_inC_inPS_%s_%zu", nuhel[ii], jj),
+                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%zu", nulabel[ii], jj));
+            hthin_nua_inC_OOPS[ii][jj]    = initHist(Form("hthin_nua_inC_OOPS_%s_%zu", nuhel[ii], jj),
+                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%zu", nulabel[ii], jj));
+            hthin_nua_outC_Ascale[ii][jj] = initHist(Form("hthin_nua_outC_Ascale_%s_%zu", nuhel[ii], jj),
+                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%zu", nulabel[ii], jj));
+            hthin_nua_outC_OOPS[ii][jj]   = initHist(Form("hthin_nua_outC_OOPS_%s_%zu", nuhel[ii], jj),
+                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%zu", nulabel[ii], jj));
+            hthin_nua_other[ii][jj]       = initHist(Form("hthin_nua_other_%s_%zu", nuhel[ii], jj),
+                                                     Form("%s flux corrected based on thin target data on N+detector material, univ. #%zu", nulabel[ii], jj));
 
             // hpCQEL[ii][jj]    = new TH1D(Form("hpCQEL_%s_%d",    nuhel[ii],jj),Form("%s flux
             // affected by p+C QEL: N#rightarrowN+X at x_{F}>0.95 or x_{F} > p_{T}/(GeV/c) +
@@ -209,7 +189,6 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
 
     chain_evts->Add(inputFile);
     chain_evts->SetBranchAddress("dk2nu", &dk2nu);
-    int nentries = chain_evts->GetEntries();
 
     chain_meta->Add(inputFile);
     chain_meta->SetBranchAddress("dkmeta", &dkmeta);
@@ -226,7 +205,9 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
     hpot.SetYTitle("#POT");
     hpot.SetBinContent(1, dkmeta->pots);
 
+    const long nentries = chain_evts->GetEntries();
     std::cout << "N of entries: " << nentries << std::endl;
+
     double fluxWGT = 0.0;
     double nuenergy = 0.0;
 
@@ -236,14 +217,11 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
         }
 
         chain_evts->GetEntry(ii);
-        const int nuidx = idx_hel(dk2nu->decay.ntype);
 
-        /**
-         * Cut on parents
-         */
-        // std::cout << "Here0\n";
+        const std::size_t nuidx = idx_hel(dk2nu->decay.ntype);
+
         makerew->calculateWeights(dk2nu, dkmeta);
-        // std::cout << "Here0.5\n";
+
         if (doing_precalculated_pos) {
             fluxWGT = ((dk2nu->nuray)[idet].wgt) * (dk2nu->decay.nimpwt) / 3.1416;
             nuenergy = (dk2nu->nuray)[idet].E;
@@ -251,32 +229,28 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
             std::vector<double> vdet = {atof(cxxdet), atof(cyydet), atof(czzdet)};
             auto const nuweight = std::make_unique<NeutrinoFluxAuxiliar::NuWeight>(vdet);
             nuweight->calculate_weight(dk2nu);
-            fluxWGT = (nuweight->wgt) * (dk2nu->decay.nimpwt) / 3.1416;
+            fluxWGT = nuweight->wgt * dk2nu->decay.nimpwt / 3.1416;
             nuenergy = nuweight->enu;
         }
 
-        // std::cout << "fluxWGT = " << fluxWGT << std::endl;
-        // std::cout << "nuenergy = " << nuenergy << std::endl;
-        // std::cout << std::endl;
-
-        if (nuidx < 0) {
+        if (nuidx > 3) {
             std::cout << "=> Wrong neutrino file" << std::endl;
         }
         const int parent_id = dk2nu->decay.ptype;
         switch (parent_id) {
-        case PIP:
-        case PIM:
+        case pdg::PIP:
+        case pdg::PIM:
             hnom[nuidx][1].Fill(nuenergy, fluxWGT);
             break;
-        case KP:
-        case KM:
+        case pdg::KP:
+        case pdg::KM:
             hnom[nuidx][2].Fill(nuenergy, fluxWGT);
             break;
-        case K0L:
+        case pdg::K0L:
             hnom[nuidx][3].Fill(nuenergy, fluxWGT);
             break;
-        case MUP:
-        case MUM:
+        case pdg::MUP:
+        case pdg::MUM:
             hnom[nuidx][4].Fill(nuenergy, fluxWGT);
             break;
         default:
@@ -315,7 +289,15 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
         auto const vwgt_oth = makerew->GetWeights("Other");
         // auto const vwgt_pCQEL  = makerew->GetWeights("ThinTargetpCQEL");
 
-        for (int jj = 0; jj < Nuniverses; jj++) {
+
+        for (std::size_t jj = 0; jj < Nuniverses; jj++) {
+            // if (dk2nu->decay.ntype == pdg::NUMU) {
+            //     hthin_pCk_weight_numu.Fill(vwgt_ttpCk[jj]);
+            //     hthin_pCk_weight_numu_weighted.Fill(vwgt_ttpCk[jj], fluxWGT);
+            //     hthin_pCK_weight_nuenergy_numu.Fill(vwgt_ttpCk[jj], nuenergy);
+            //     hthin_pCK_weight_nuenergy_numu_weighted.Fill(vwgt_ttpCk[jj], nuenergy, fluxWGT);
+            // }
+
             const double wgt_thin = vwgt_ttpCpi[jj]
                                   * vwgt_ttpCk[jj]
                                   * vwgt_ttnCpi[jj]
@@ -329,6 +311,7 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
                                   // * vwgt_ttnua[jj]*vwgt_ttnuAlFe[jj];
             const double wgt_mipp = vwgt_mipp_pi[jj] * vwgt_mipp_K[jj];
             const double wgt_att = vwgt_att[jj] * vwgt_abs[jj];
+
             hthin[nuidx][jj].Fill(nuenergy, fluxWGT * wgt_thin);
             hmipp[nuidx][jj].Fill(nuenergy, fluxWGT * wgt_mipp);
             hatt[nuidx][jj].Fill(nuenergy, fluxWGT * wgt_att);
@@ -356,9 +339,7 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
             hthin_nua_outC_OOPS[nuidx][jj].Fill(nuenergy, fluxWGT * vwgt_ttnua_outC_OOPS[jj]);
             hthin_nua_other[nuidx][jj].Fill(nuenergy, fluxWGT * vwgt_ttnua_other[jj]);
             // hthin_nuAlFe[nuidx][jj]->Fill(nuenergy, fluxWGT * vwgt_ttnuAlFe[jj]);
-
             // hpCQEL [nuidx][jj]->Fill(nuenergy, fluxWGT * vwgt_pCQEL[jj]);
-            // std::cout << "Here5\n";
         }
     }
 
@@ -367,7 +348,7 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
 
     fOut.mkdir("nom");
     fOut.mkdir("nom/parent");
-    for (int ii = 0; ii < Nnuhel; ii++) {
+    for (std::size_t ii = 0; ii < Nnuhel; ii++) {
         fOut.mkdir(Form("%s_thintarget", nuhel[ii]));
         fOut.mkdir(Form("%s_mippnumi", nuhel[ii]));
         fOut.mkdir(Form("%s_attenuation", nuhel[ii]));
@@ -397,19 +378,18 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
         fOut.mkdir(Form("%s_thintarget/nua_other", nuhel[ii]));
         // fOut.mkdir(Form("%s_thintarget/pCfwd",  nuhel[ii]));
         // fOut.mkdir(Form("%s_thintarget/nuAlFe", nuhel[ii]));
-
         // fOut.mkdir(Form("%s_pCQEL",  nuhel[ii]));
     }
 
-    for (int ii = 0; ii < Nnuhel; ii++) {
+    for (std::size_t ii = 0; ii < Nnuhel; ii++) {
         fOut.cd("nom");
         hcv[ii].Write();
         hnom[ii][0].Write();
         fOut.cd("nom/parent");
-        for (int kk = 1; kk < Nparent; kk++) {
+        for (std::size_t kk = 1; kk < Nparent; kk++) {
             hnom[ii][kk].Write();
         }
-        for (int jj = 0; jj < Nuniverses; jj++) {
+        for (std::size_t jj = 0; jj < Nuniverses; jj++) {
             fOut.cd(Form("%s_thintarget", nuhel[ii]));
             hthin[ii][jj].Write();
             fOut.cd(Form("%s_mippnumi", nuhel[ii]));
@@ -471,6 +451,10 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
     }
     fOut.cd();
     hpot.Write();
+    // hthin_pCk_weight_numu.Write();
+    // hthin_pCk_weight_numu_weighted.Write();
+    // hthin_pCK_weight_nuenergy_numu.Write();
+    // hthin_pCK_weight_nuenergy_numu_weighted.Write();
 
     fOut.Close();
 
@@ -480,18 +464,18 @@ void doReweight_dk2nu(const char* inputFile, const char* outputFile, const char*
     std::cout << "End of run()" << std::endl;
 }
 
-int idx_hel(const int pdgcode) {
+std::size_t idx_hel(const int pdgcode) {
     switch (pdgcode) {
-    case 14:
+    case pdg::NUMU:
         return 0;
-    case -14:
+    case pdg::NUMUBAR:
         return 1;
-    case 12:
+    case pdg::NUE:
         return 2;
-    case -12:
+    case pdg::NUEBAR:
         return 3;
     default:
-        return -1;
+        return 4;
     }
 }
 
