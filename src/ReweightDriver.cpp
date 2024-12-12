@@ -271,11 +271,14 @@ double ReweightDriver::getWeight(ThinTargetnucleonAReweighter* reweighter,
 
         if (!reweighter->canReweight(aa)) continue;
 
+#ifdef UH_ICARUS
+#pragma message("[INFO] UH_ICARUS is enabled. Ignoring QEL-like interactions.")
         if (aa.Inc_pdg == aa.Prod_pdg && (aa.xF > 0.95 || (aa.Pt < aa.xF - 0.5))) {
             // if QEL-like, skip
             *iNode = true;
             continue;
         }
+#endif
 
         double rewval = reweighter->calculateWeight(aa);
 
@@ -294,7 +297,7 @@ double ReweightDriver::getWeight(ThinTargetnucleonAReweighter* reweighter,
         else if (is_carbon_vol) {
             if (aa.xF < 0.0 && aa.xF >= -0.25 && aa.Pt <= 2.0 && aa.Inc_P >= 12.0) {
 #ifdef NUA_XF_MIRRORING
-#pragma message("WARNING: NUA_XF_MIRRORING is enabled. This was just a test and shouldn't be used.")
+#pragma message("[WARNING] NUA_XF_MIRRORING is enabled. This was just a test and shouldn't be used.")
                 // A. Wood (apwood@central.uh.edu)
                 // 2024-12-12
                 // This was a test to approximate what would happen if we had HP data for interactions

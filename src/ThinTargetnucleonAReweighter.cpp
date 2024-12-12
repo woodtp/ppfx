@@ -253,7 +253,7 @@ double ThinTargetnucleonAReweighter::calculateWeight(const InteractionData& aa)
         // treatment here is basically 40% corr. across hadron species + 40% uncorr. across all
         // species, xF bins
 #ifdef UH_ICARUS
-#pragma message "UH_ICARUS is defined. Disabling 40% correlation for negative xF."
+#pragma message "[INFO] UH_ICARUS is defined. Disabling 40% correlation for negative xF."
         // A. Wood (apwood@central.uh.edu)
         // 2024-12-12
         // We found the 40% correlations to be a bit too aggressive for ICARUS.
