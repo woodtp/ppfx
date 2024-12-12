@@ -45,7 +45,7 @@ namespace NeutrinoFluxReweight{
     // Z direction along the direction of the incident particle
     // Cos between incMom and prodMom:
     // The units are in GeV
-
+    
     gen      = genid;
 
     Inc_pdg  = incPdg;

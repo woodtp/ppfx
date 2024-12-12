@@ -6,3 +6,4 @@ latex/
 *.txt
 !CMakeLists.txt
 *.root
+.vscode
