@@ -25,23 +25,25 @@
 #include <iomanip>
 
 namespace NeutrinoFluxReweight{
-    
+
   /*! \class MakeReweight
    *  \brief A class to make the reweight event by event.
    */
   class MakeReweight{
- 
+
   private:
     MakeReweight();
     ~MakeReweight();
-    
+
   public:
     void SetOptions(std::string fileIn);
     static MakeReweight* getInstance();
     static void resetInstance();
-    
+
+
+
     /*! calculate the weights for this event using the old flux ntuple format
-     * (filled in nu_g4numi object),  the tgtcfg (the target configuration, example: le010z) 
+     * (filled in nu_g4numi object),  the tgtcfg (the target configuration, example: le010z)
      * and the horncfg (horn configuration, example: 185i)
      */
     void calculateWeights(nu_g4numi* nu, const char* tgtcfg, const char* horncfg);
@@ -60,12 +62,17 @@ namespace NeutrinoFluxReweight{
 
     //! get the cv weights
     double GetCVWeight();
-    
+
     //! vector of Reweighter Drivers, one per universe
     std::vector<ReweightDriver*> vec_rws;
-    
+
     //! Reweighter Drivers for the central value
     ReweightDriver* cv_rw;
+
+    bool AlreadyInitialized() {return init;};
+
+    //! Override the base universe seed used
+    void setBaseSeed(int val);
 
   private:
     /*!
@@ -76,7 +83,7 @@ namespace NeutrinoFluxReweight{
     void ParseOptions();
     /*! Parse seeting options */
     void doTheJob(InteractionChainData* icd);
-    
+
     std::vector<ParameterTable> cvPars,univPars;
     int Nuniverses;
     std::string mippCorrOption;
@@ -84,11 +91,14 @@ namespace NeutrinoFluxReweight{
     std::vector<double> vec_wgts;
     std::map<std::string,std::vector<double> > map_rew_wgts;
     double cv_wgt;
+    int base_universe = 1000000;
+
+    bool init = false;
 
     static MakeReweight* instance;
-    
+
   };
 
-  
+
 }
 #endif

@@ -1,7 +1,9 @@
-*.swp
-src/*.o
 bin/
+lib/
+*.o
 html/
 latex/
-lib/
+*.txt
+!CMakeLists.txt
+*.root
 .vscode

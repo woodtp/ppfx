@@ -29,6 +29,12 @@ const double pival = 3.1416;
 struct HistList{
 
   //Single array histos
+	vector<TH2D *> _hxfpt_parents;
+	vector<TH1D *> _hchainsize_parents;
+	vector<TH2D *> _hxfpt_grandparents;
+	vector<TH2D *> _henuxf_parents;
+	vector<TH2D *> _henuxf_grandparents;
+
   vector<TH2D *> _hmat;	
   vector<TH2D *> _hvol;
   vector<TH2D *> _hmatbkw;
@@ -63,6 +69,14 @@ struct HistList{
   TH2D* _h_hpwgt_xfpt_pc_pip;
   TH2D* _h_occ_xfpt_pc_kp;
   TH2D* _h_hpwgt_xfpt_pc_kp;
+
+	TH2D* _hparentsmat;
+	TH2D* _hgrandparentsmat;
+	TH1D* _hchainsize;
+	TH2D* _hparentsgp;
+	TH2D* _hgrandparentsggp;
+  TH2D* _henuxf_allparents;
+  TH2D* _henuxf_allgrandparents;
 
 };
 

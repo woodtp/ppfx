@@ -50,6 +50,9 @@ namespace NeutrinoFluxReweight{
     std::vector<TFile*> fTTscale;
     
     static ThinTargetMC* instance;
+    double xx[13];
+    double yy[13];
+    double mc_tot_xs_prt;
     
   };
 

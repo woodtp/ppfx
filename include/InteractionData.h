@@ -9,24 +9,27 @@
 #include <iostream>
 
 namespace NeutrinoFluxReweight{
-  
+
     /*! \class InteractionData
    *  \brief The information about a hadronic interaction needed to calculate weights.
 
    Information about the kinematics of the interaction, the identity of the projectile and target, the producted particles, etc. This looks like KinProd to me.
-   
+
  */
-  class InteractionData{ 
- 
+  class InteractionData{
+
   public:
 
     //!Default Constructor
     InteractionData();
 
     //! Constructor given kinematic of the interaction.
-    InteractionData(int genid, double incMom[], int incPdg, double prodMom[], int prodPdg, std::string volname, int nucleus_pdg, std::string procname, double vtx[]);
+    // InteractionData(int genid, double incMom[], int incPdg, double prodMom[], int prodPdg, std::string volname, int nucleus_pdg, std::string procname, double vtx[]);
+    InteractionData(const int genid, const double (&incMom)[3], const int incPdg, const double (&prodMom)[3], const int prodPdg, const std::string &volname, const int nucleus_pdg, const std::string &procname, const double (&vtx)[3]);
 
     virtual ~InteractionData();
+
+    friend std::ostream& operator<<(std::ostream& os, const InteractionData& id);
 
     //! generation index
     int gen;
@@ -36,18 +39,18 @@ namespace NeutrinoFluxReweight{
 
     //! pdg code of the produced particle
     int Prod_pdg;
-    
+
     //! Momentum magnitude of the incident particle
     double Inc_P;
 
     //! Momentum 4 vector of the incident particle, E=p[3]
-    double Inc_P4[4]; 
+    double Inc_P4[4];
 
     //! Momentum magnitude of the produced particle
     double Prod_P;
 
     //! Momentum 4 vector of the produced particle, E=p[3]
-    double Prod_P4[4]; 
+    double Prod_P4[4];
 
     //! Location of the interaction
     double Vtx[3];
@@ -56,30 +59,30 @@ namespace NeutrinoFluxReweight{
     double Inc_Mass;
 
     //!  Mass of the produced particle
-    double Prod_Mass; 
+    double Prod_Mass;
 
-    //! Feynmann-x of the produced particle: \f$ x_{F} = 2P_{L}/\sqrt(s) \f$ 
+    //! Feynmann-x of the produced particle: \f$ x_{F} = 2P_{L}/\sqrt(s) \f$
     double xF;
 
-    //! Longitudinal momentum (GeV/c) of the produced particle 
-    double Pz; 
+    //! Longitudinal momentum (GeV/c) of the produced particle
+    double Pz;
 
-    //! Angle (rad) of the produced particle 
+    //! Angle (rad) of the produced particle
     double Theta;
 
-    //! Transversal momentum (GeV/c) of the produced particle 
+    //! Transversal momentum (GeV/c) of the produced particle
     double Pt;
 
-    //! Center of mass energy of the collision indident particle - nuclear proton. 
+    //! Center of mass energy of the collision indident particle - nuclear proton.
     double Ecm;
 
-    //! \f$ \beta_{CM} \f$ 
+    //! \f$ \beta_{CM} \f$
     double Betacm;
 
-    //! \f$ \gamma_{CM} \f$ 
+    //! \f$ \gamma_{CM} \f$
     double Gammacm;
 
-    //! Interaction volume 
+    //! Interaction volume
     std::string Vol;
 
     //target nucleus (pdg code)
@@ -92,9 +95,7 @@ namespace NeutrinoFluxReweight{
 
   private:
     TDatabasePDG* particle;
-    
-  };
 
-  
+  };
 }
 #endif

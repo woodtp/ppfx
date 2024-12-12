@@ -20,18 +20,21 @@
 #include "ThinTargetMesonIncidentReweighter.h"
 #include "ThinTargetnucleonAReweighter.h"
 
+#include "InteractionData.h"
 #include "InteractionChainData.h"
+#include "IInteractionReweighting.h"
+#include "IInteractionChainReweighting.h"
 
 namespace NeutrinoFluxReweight{
-    
+
   /*! \class ReweightDriver
-   *  \brief A class to manage and drive the weight calculation procedure. 
+   *  \brief A class to manage and drive the weight calculation procedure.
    *
    * There is a one-to-one correspondence between ReweightDrivers and universes.
    */
 
   class ReweightDriver{
-  public:  
+  public:
     /*!
      * the constructor
     */
@@ -45,7 +48,7 @@ namespace NeutrinoFluxReweight{
      *
      * - Call mipp_yields on input chain. record interactions covered with a weight in interaction_covered.
      * - Call attenuation on input chain
-     * - Call thin target reweighters. 
+     * - Call thin target reweighters.
      *    -# Call na49 for interactions not yet covered. record in interaction_covered
      *    -# ditto. call MIPP, then theory
      */
@@ -56,7 +59,7 @@ namespace NeutrinoFluxReweight{
 
      /*!   MIPP NuMI kaons yield weight   */
     double mipp_kaon_wgt;
-    
+
     /*!  Target attenuation weight   */
     double att_wgt;
 
@@ -67,7 +70,7 @@ namespace NeutrinoFluxReweight{
     double abs_nucleon_wgt;
     double abs_other_wgt;
     double tot_abs_wgt;
-       
+
     /*! Thin target proton on carbon producing pions weights   */
     double pC_pi_wgt;
 
@@ -76,40 +79,40 @@ namespace NeutrinoFluxReweight{
 
     /*! Thin target neutron on carbon producing pions weights   */
     double nC_pi_wgt;
-    
+
     /*! Thin target proton on carbon producing nucleons weights   */
     double pC_nu_wgt;
 
     /*! nuA    */
     double nuA_wgt;
-    double pC_QEL_wgt;
-    double nuAlFe_wgt;
-    
+    double nuA_inC_inPS_wgt;
+    double nuA_inC_OOPS_wgt;
+    double nuA_outC_Ascale_wgt;
+    double nuA_outC_OOPS_wgt;
+    double nuA_other_wgt;
+
     /*! Meson incident weights   */
     double meson_inc_wgt;
+    double meson_inc_incoming_pip_wgt;
+    double meson_inc_incoming_pim_wgt;
+    double meson_inc_incoming_Kp_wgt;
+    double meson_inc_incoming_Km_wgt;
+    double meson_inc_incoming_K0_wgt;
+    double meson_inc_outgoing_pip_wgt;
+    double meson_inc_outgoing_pim_wgt;
+    double meson_inc_outgoing_Kp_wgt;
+    double meson_inc_outgoing_Km_wgt;
+    double meson_inc_outgoing_K0_wgt;
 
-    double meson_inc_projectile_pip_wgt;
-    double meson_inc_projectile_pim_wgt;
-    double meson_inc_projectile_Kp_wgt;
-    double meson_inc_projectile_Km_wgt;
-    double meson_inc_projectile_K0_wgt;
-
-    double meson_inc_daughter_pip_wgt;
-    double meson_inc_daughter_pim_wgt;
-    double meson_inc_daughter_Kp_wgt;
-    double meson_inc_daughter_Km_wgt;
-    double meson_inc_daughter_K0_wgt;
-
-    
      /*!   Any other hadronic interaction not corrected yet   */
     double other_wgt;
-    
-    MIPPNumiPionYieldsReweighter*           MIPP_NUMI_PION_Universe;
-    MIPPNumiKaonYieldsReweighter*           MIPP_NUMI_KAON_Universe;
-    TargetAttenuationReweighter*            TARG_ATT_Universe;
-    AbsorptionICReweighter*                 VOL_ABS_IC_Universe;
-    AbsorptionDPIPReweighter*               VOL_ABS_DPIP_Universe;
-    AbsorptionDVOLReweighter*               VOL_ABS_DVOL_Universe;
+
+    MIPPNumiPionYieldsReweighter* MIPP_NUMI_PION_Universe;
+    MIPPNumiKaonYieldsReweighter* MIPP_NUMI_KAON_Universe;
+    TargetAttenuationReweighter* TARG_ATT_Universe;
+    AbsorptionICReweighter*   VOL_ABS_IC_Universe;
+    AbsorptionDPIPReweighter* VOL_ABS_DPIP_Universe;
+    AbsorptionDVOLReweighter* VOL_ABS_DVOL_Universe;
     NucleonAbsorptionOutOfTargetReweighter* VOL_ABS_NUCLEON_Universe;
     OtherAbsorptionOutOfTargetReweighter*   VOL_ABS_OTHER_Universe;
     ThinTargetpCPionReweighter*             THINTARGET_PC_PION_Universe;
@@ -125,7 +128,7 @@ namespace NeutrinoFluxReweight{
      //Flag to select the reweighters:
     bool doMIPPNumi;
 
-  private:    
+  private:
     /*!
      * Configures each of the reweighing tools.
      */
@@ -139,9 +142,34 @@ namespace NeutrinoFluxReweight{
     const ParameterTable& univPars;
 
     std::string fileOptions;
-    
+
+    bool m_hasMIPP;
+
+    double checkWeight(double wgt, const std::vector<InteractionData>& interaction_chain);
+    /*!
+     * Get the weight for a given reweighter and interaction chain
+     */
+    double getWeight(IInteractionReweighting* reweighter,
+                     const std::vector<InteractionData>& interaction_chain,
+                     std::vector<bool>& interaction_nodes);
+
+    /*!
+     * Overloads for specific behavior
+     */
+    double getWeight(ThinTargetMesonIncidentReweighter* reweighter,
+                     const std::vector<InteractionData>& interaction_chain,
+                     std::vector<bool>& interaction_nodes);
+    double getWeight(ThinTargetnucleonAReweighter* reweighter,
+                     const std::vector<InteractionData>& interaction_chain,
+                     std::vector<bool>& interaction_nodes);
+
+    double getWeightMIPP(IInteractionChainReweighting* reweighter,
+                         const InteractionChainData& icd,
+                         std::vector<bool>& interaction_nodes);
+    double getWeightAttenuation(IInteractionChainReweighting* reweighter,
+                                const InteractionChainData& icd);
   };
 
-  
+
 }
 #endif
