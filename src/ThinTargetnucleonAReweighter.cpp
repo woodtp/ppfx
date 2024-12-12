@@ -3,7 +3,6 @@
 
 #include <cstdlib>
 #include <cwctype>
-#include <iostream>
 #include <stdexcept>
 
 #include "MakeReweight.h"
@@ -222,8 +221,6 @@ double ThinTargetnucleonAReweighter::calculateWeight(const InteractionData& aa)
         else
             not_handled = true;
 
-        // if(!not_handled && !not_data_vol) return wgt;
-
         double scaling = 1.0;
         if (pdg::PIP == aa.Prod_pdg)
             scaling = vbin_data_pip[m_scalingBinID];
@@ -255,7 +252,16 @@ double ThinTargetnucleonAReweighter::calculateWeight(const InteractionData& aa)
         // add extra uncertainties for xF < 0
         // treatment here is basically 40% corr. across hadron species + 40% uncorr. across all
         // species, xF bins
-        const double negxF_corrunc =  1.0; // aa.xF < 0.0 ? bin_prtleftover_inc : 1.0;
+#ifdef UH_ICARUS
+#pragma message "UH_ICARUS is defined. Disabling 40% correlation for negative xF."
+        // A. Wood (apwood@central.uh.edu)
+        // 2024-12-12
+        // We found the 40% correlations to be a bit too aggressive for ICARUS.
+        // See SBN DocDB 38113 for more details.
+        const double negxF_corrunc =  1.0;
+#else
+        const double negxF_corrunc =  aa.xF < 0.0 ? bin_prtleftover_inc : 1.0;
+#endif
 
         if (pdg::PIP == aa.Prod_pdg)
             wgt = vbin_prt_inc_pip[binnu] * negxF_corrunc;

@@ -7,6 +7,9 @@ LDLIBS = -lppfx -L${DK2NU}/lib -ldk2nuTree
 
 CC = g++
 CFLAGS = -fPIC -DLINUX -O3 -g $(shell root-config --cflags) -Wall -Wextra -pedantic
+ICARUSFLAG = -DUH_ICARUS
+# ICARUSFLAG += -DNUA_XF_MIRRORING
+CFLAGS += $(ICARUSFLAG)
 
 all:    lib programs doxy
 

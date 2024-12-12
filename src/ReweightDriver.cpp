@@ -294,6 +294,11 @@ double ReweightDriver::getWeight(ThinTargetnucleonAReweighter* reweighter,
         else if (is_carbon_vol) {
             if (aa.xF < 0.0 && aa.xF >= -0.25 && aa.Pt <= 2.0 && aa.Inc_P >= 12.0) {
 #ifdef NUA_XF_MIRRORING
+#pragma message("WARNING: NUA_XF_MIRRORING is enabled. This was just a test and shouldn't be used.")
+                // A. Wood (apwood@central.uh.edu)
+                // 2024-12-12
+                // This was a test to approximate what would happen if we had HP data for interactions
+                // where xF < 0.0. Could remove, but leaving for now in case the UH Group wants to revisit.
                 const double inc_mom[3] = { aa.Inc_P4[0], aa.Inc_P4[1], aa.Inc_P4[2] };
                 const double prod_mom[3] = { aa.Prod_P4[0], aa.Prod_P4[1], aa.Prod_P4[2] };
                 const double vtx_int[3] = { aa.Vtx[0], aa.Vtx[1], aa.Vtx[2] };
