@@ -82,7 +82,7 @@ IDET = ICARUS_geometrical_center
 TARFILE_NAME = "local_install.tar.gz"
 
 today = datetime.today().strftime("%Y-%m-%d")
-OUTDIR = SCRATCH_AREA / f"{today}_{DATA_TAG}_{IDET}_2"
+OUTDIR = SCRATCH_AREA / f"{today}_{DATA_TAG}_{IDET}"
 
 ##################################################
 
