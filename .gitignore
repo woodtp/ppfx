@@ -7,3 +7,4 @@ latex/
 !CMakeLists.txt
 *.root
 .vscode
+dk2nu/
