@@ -24,11 +24,11 @@ ls
 
 echo
 echo $(date) "======== SETUP ROOT, BOOST and DK2NU ========"
-echo "source setup_antoni.sh"
-source ${INPUT_TAR_DIR_LOCAL}/setup_antoni.sh
+echo "source setup_el9.sh"
+source ${INPUT_TAR_DIR_LOCAL}/setup_el9.sh
 
-echo $(date) "======== ups active ========"
-ups active
+# echo $(date) "======== ups active ========"
+# ups active
 
 echo
 echo $(date) "======== UPDATE g4numi run number to select input ========"
@@ -37,10 +37,10 @@ eval process=${PROCESS}
 echo process=$process
 INPUT_FILE=$(sed "$((process+1))q;d" ${INPUT_TAR_DIR_LOCAL}/filelist_${DATA_TAG}.txt)
 # INPUT_FILE="/pnfs/numix/persistent/users/nbostan/G4NuMI_RHC_new_target/g4numiv6_minervame_me000z-200i_\${PROCESS}_0001.root"
-name_file=$(basename $INPUT_FILE)
-# eval name_file=$(basename $INPUT_FILE)
+input_filename=$(basename $INPUT_FILE)
+# eval input_filename=$(basename $INPUT_FILE)
 
-echo name_file=$name_file
+echo input_filename=$input_filename
 echo INPUT_FILE=$INPUT_FILE
 
 # ifdh ls $INPUT_FILE
@@ -60,7 +60,7 @@ while [ $n_attempts -gt 0 ]
 do
   echo $n_attempts attempts to copy left
   ifdh cp "${INPUT_FILE}" "$CONDOR_DIR_INPUT/"
-  if [ -s $name_file ]
+  if [ -s $input_filename ]
   then
     break
   fi
@@ -70,13 +70,13 @@ done
 
 ls -l
 
-if [ ! -s $name_file ]
+if [ ! -s $input_filename ]
 then
  echo "Can't find input file. Aborting."
  exit
 fi
 
-OUTPUT_FILE="ppfx_${DATA_TAG}_${name_file%.*}.root"
+OUTPUT_FILE="ppfx_${DATA_TAG}_${input_filename%.*}.root"
 
 
 echo "DATA_TAG=$DATA_TAG"
@@ -89,7 +89,7 @@ echo $(date) "======== EXECUTING ppfx ========"
 #deal with \${PROCESS}
 #replace underscores in IDET with spaces
 idet=$(echo $IDET | sed s/_/\ /g)
-cmd="${INPUT_TAR_DIR_LOCAL}/bin/doReweight_dk2nu_icarus ${name_file} ${output_file} ${INPUT_TAR_DIR_LOCAL}/${INPUT_OPTIONS} ${idet}"
+cmd="${INPUT_TAR_DIR_LOCAL}/bin/doReweight_dk2nu_icarus ${input_filename} ${output_file} ${INPUT_TAR_DIR_LOCAL}/${INPUT_OPTIONS} ${idet}"
 #cmd="bin/doReweight_dk2nu_original ${INPUT_FILE} ${output_file} ${INPUT_OPTIONS} ${idet}"
 echo $cmd
 eval $cmd

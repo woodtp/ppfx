@@ -32,6 +32,8 @@ file_list = f"./filelist_{DATA_TAG}.txt"
 with open(file_list, "r") as f:
     N_JOBS = len(f.readlines())
 
+N_JOBS = 1
+
 # N_JOBS = 495  # set this equal to the number of input files
 INPUT_OPTIONS = "scripts/inputs_default.xml"
 # OPTION = "QuarterWeight"
@@ -129,7 +131,7 @@ def main():
         f"-e IDET={IDET}",
         f"--tar_file_name dropbox://{cache_folder / TARFILE_NAME}",
         f"-L {logfile}",
-        "--apptainer-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        # "--apptainer-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
         "--generate-email-summary",
         f"file://{cache_folder}/ppfx_job_list.sh"
         ])
